@@ -6,7 +6,7 @@ A paper-trading simulator: a Spring Boot service with a hand-written limit-order
 
 ## Status
 
-Week 1 in progress. In place: the Spring Boot skeleton, Postgres via Docker Compose, the Flyway schema for users, accounts, orders, trades, and positions, and a Testcontainers test that proves the migrations apply to a real Postgres. Next: REST endpoints and market orders.
+Week 1 done: accounts, portfolio, and market orders over REST, backed by Postgres and covered by Testcontainers tests. Quotes are placeholder prices from `application.yml` until the live feed lands in week 2, so for now every fill happens at a fixed price.
 
 ## What it will do
 
@@ -31,6 +31,36 @@ market-data API
                                     v
                              STOMP WebSocket --> React dashboard
 ```
+
+## API
+
+Bodies are JSON. Errors come back as RFC 9457 problem details with a `detail` message.
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| `POST` | `/api/accounts` | Create an account for a username, funded with the starting cash |
+| `GET` | `/api/accounts/{id}` | Cash and starting cash |
+| `GET` | `/api/accounts/{id}/portfolio` | Positions marked at the latest quote, with realized and unrealized P&L |
+| `POST` | `/api/accounts/{id}/orders` | Place an order. Market orders fill immediately at the cached quote |
+| `GET` | `/api/accounts/{id}/orders?status=OPEN` | List orders, optionally filtered by status |
+| `GET` | `/api/accounts/{id}/orders/{orderId}` | One order |
+| `DELETE` | `/api/accounts/{id}/orders/{orderId}` | Cancel an open order |
+| `GET` | `/api/accounts/{id}/trades` | Fills, newest first |
+| `GET` | `/api/quotes`, `/api/quotes/{symbol}` | The quote cache |
+
+A buy that costs more than the account holds in cash, or a sell of more shares than it owns, is rejected with a 422 and leaves no order behind. The whole fill runs in one transaction under a row lock on the account, so cash, position, order, and trade change together or not at all.
+
+## Try it
+
+With the service running (see below), from Git Bash or any Unix shell:
+
+```bash
+curl -s -X POST localhost:8080/api/accounts -H 'content-type: application/json' -d '{"username":"nishant"}'
+curl -s -X POST localhost:8080/api/accounts/1/orders -H 'content-type: application/json' -d '{"symbol":"AAPL","side":"BUY","quantity":10}'
+curl -s localhost:8080/api/accounts/1/portfolio
+```
+
+The order comes back `FILLED`, and the portfolio shows the cash debited and a ten-share AAPL position at the fill price.
 
 ## Data model
 
@@ -72,7 +102,7 @@ Tests run against a throwaway Postgres started by Testcontainers, so Docker must
 
 ## Roadmap
 
-- [ ] **Week 1, core domain.** Docker Compose, Flyway, REST endpoints for accounts, portfolio, and orders. Market orders only. Done when a market order placed over curl changes cash and positions.
+- [x] **Week 1, core domain.** Docker Compose, Flyway, REST endpoints for accounts, portfolio, and orders. Market orders only. Done when a market order placed over curl changes cash and positions.
 - [ ] **Week 2, the engine.** Limit orders, a per-symbol order book, a scheduled price feed, the matching engine, and P&L. Done when a resting limit order fills on its own when the price crosses it, with a test that proves it.
 - [ ] **Week 3, real-time and front end.** WebSocket push and the React dashboard: portfolio, order ticket, open orders, trade history, price line, leaderboard. Done when two browser tabs see the same fill at the same moment.
 - [ ] **Week 4, hardening and packaging.** Validation and error responses, optimistic locking on balances, idempotency keys on order placement, one-command Docker Compose, CI, and architecture notes. Done when a stranger can clone it and have it running in five minutes.
