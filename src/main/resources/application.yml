@@ -13,9 +13,29 @@ spring:
   docker:
     compose:
       lifecycle-management: start-only # leave postgres up between runs
+  mvc:
+    problemdetails:
+      enabled: true
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+
+papertrader:
+  starting-cash: 100000.00
+  # placeholder prices until the market data feed lands; the feed overwrites these
+  seed-quotes:
+    AAPL: 232.15
+    AMD: 152.20
+    AMZN: 186.25
+    COST: 878.95
+    GOOGL: 172.40
+    JPM: 205.10
+    META: 512.30
+    MSFT: 428.60
+    NFLX: 675.40
+    NVDA: 118.90
+    TSLA: 244.70
+    V: 271.85
