@@ -18,8 +18,12 @@ public class QuoteCache {
 
     private final Map<String, Quote> quotes = new ConcurrentHashMap<>();
 
-    public QuoteCache(PaperTraderProperties properties) {
-        Instant now = Instant.now();
+    private final String mode;
+
+    public QuoteCache(PaperTraderProperties properties,
+            @org.springframework.beans.factory.annotation.Value("${papertrader.feed.mode:demo}") String mode) {
+        this.mode = mode;
+        Instant now = mode.equals("finnhub") ? Instant.EPOCH : Instant.now();
         properties.seedQuotes().forEach((symbol, price) -> {
             String key = symbol.toUpperCase(Locale.ROOT);
             quotes.put(key, new Quote(key, price, now));
@@ -35,8 +39,22 @@ public class QuoteCache {
     }
 
     public void update(Quote quote) {
-        quotes.put(quote.symbol(), quote);
+        if (quote.price() == null || quote.price().signum() <= 0 || quote.price().compareTo(new java.math.BigDecimal("9999999999")) > 0
+                || quote.asOf() == null || quote.asOf().isAfter(Instant.now().plusSeconds(30))) {
+            throw new IllegalArgumentException("invalid quote");
+        }
+        quotes.compute(quote.symbol(), (symbol, previous) -> previous == null || !quote.asOf().isBefore(previous.asOf()) ? quote : previous);
     }
+
+    public boolean isTradable(Quote quote) {
+        return !mode.equals("finnhub") || quote.asOf().isAfter(Instant.now().minusSeconds(120));
+    }
+
+    public void requireTradable(Quote quote) {
+        if (!isTradable(quote)) throw new io.github.nishantshah0.papertrader.trading.OrderRejectedException("quote is stale; wait for a fresh market quote");
+    }
+
+    public String mode() { return mode; }
 
     public Set<String> symbols() {
         return Set.copyOf(quotes.keySet());

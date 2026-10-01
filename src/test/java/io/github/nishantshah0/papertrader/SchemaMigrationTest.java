@@ -28,6 +28,6 @@ class SchemaMigrationTest {
 
         Integer applied = jdbc.queryForObject(
                 "select count(*) from flyway_schema_history where success", Integer.class);
-        assertThat(applied).isEqualTo(1);
+        assertThat(applied).isEqualTo(2);
     }
 }
