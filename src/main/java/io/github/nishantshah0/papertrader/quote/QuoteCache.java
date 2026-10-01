@@ -11,12 +11,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
-// latest quote per symbol. seeded from config so orders have a price before
-// the live feed exists; the feed overwrites these as it polls
+// Latest quote and a bounded history of observed prices for the terminal chart.
 @Component
 public class QuoteCache {
 
     private final Map<String, Quote> quotes = new ConcurrentHashMap<>();
+    private final Map<String, List<Quote>> history = new ConcurrentHashMap<>();
+    private static final int HISTORY_LIMIT = 240;
 
     private final String mode;
 
@@ -26,7 +27,9 @@ public class QuoteCache {
         Instant now = mode.equals("finnhub") ? Instant.EPOCH : Instant.now();
         properties.seedQuotes().forEach((symbol, price) -> {
             String key = symbol.toUpperCase(Locale.ROOT);
-            quotes.put(key, new Quote(key, price, now));
+            Quote seed = new Quote(key, price, now);
+            quotes.put(key, seed);
+            history.put(key, mode.equals("finnhub") ? List.of() : List.of(seed));
         });
     }
 
@@ -43,7 +46,18 @@ public class QuoteCache {
                 || quote.asOf() == null || quote.asOf().isAfter(Instant.now().plusSeconds(30))) {
             throw new IllegalArgumentException("invalid quote");
         }
-        quotes.compute(quote.symbol(), (symbol, previous) -> previous == null || !quote.asOf().isBefore(previous.asOf()) ? quote : previous);
+        quotes.compute(quote.symbol(), (symbol, previous) -> {
+            if (previous != null && quote.asOf().isBefore(previous.asOf())) return previous;
+            var samples = new java.util.ArrayList<>(history.getOrDefault(symbol, List.of()));
+            if (!samples.isEmpty() && samples.getLast().asOf().equals(quote.asOf())) samples.removeLast();
+            samples.add(quote);
+            history.put(symbol, List.copyOf(samples.subList(Math.max(0, samples.size() - HISTORY_LIMIT), samples.size())));
+            return quote;
+        });
+    }
+
+    public Map<String, List<Quote>> history() {
+        return Map.copyOf(history);
     }
 
     public boolean isTradable(Quote quote) {

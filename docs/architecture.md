@@ -18,6 +18,8 @@ Demo generator or Finnhub quote API
                               React reloads portfolio/orders/trades
 ```
 
+QuoteCache keeps an immutable snapshot of at most 240 observed quotes per symbol. The REST history endpoint hydrates charts after a browser refresh. Older updates are ignored, equal-timestamp updates replace the last sample, and live-mode seed prices are excluded. This bounded memory buffer resets on server restart.
+
 The quote feed and matcher use Spring's scheduler. They run independently of browser connections. Each candidate match invokes a separate proxied transactional service call; a failure for one account does not stop the remaining candidates.
 
 ## Why a database-backed book
@@ -63,3 +65,9 @@ There is deliberately no identity/authentication layer. Account IDs select share
 ## Checks
 
 JUnit/Testcontainers exercises real Postgres migrations and transactional behavior, including concurrent orders and idempotent retries. A scheduled integration test changes a quote and waits for the matcher to fill without another order request. Playwright runs against the packaged app, including two independently subscribed browser tabs, cancellation, server validation, and mobile overflow checks.
+
+## Frontend navigation
+
+The root route serves the product home page. The trading workspace lives at `/terminal`; `/terminal/` is also supported. The backend forwards only these explicit terminal routes to the bundled index, so direct navigation and refresh work without swallowing unknown API or asset routes. The terminal logo returns home. Instrument links pass a validated symbol query parameter, and the saved practice account remains in local storage across navigation.
+
+The home page uses a dark charcoal layout with blue accents with live cache snapshots in a semantic market table. Account-opening links use `/terminal?setup=1`; successful account selection clears that parameter so refreshes resume the selected account instead of reopening setup.
