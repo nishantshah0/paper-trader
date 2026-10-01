@@ -1,1275 +1,1168 @@
 .home {
-  --home-accent: #c5f47f;
-  --home-muted: #929caa;
-  background: #0b0e12;
-  color: #edf0f4;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  --broker-blue: #164b86;
+  --broker-navy: #142e4c;
+  --broker-muted: #5b6b7c;
+  --broker-border: #dce3ea;
+  --broker-surface: #f3f6f9;
+  color-scheme: light;
+  background: #fff;
+  color: #182c43;
+  font-family: Inter, Arial, sans-serif;
   font-size: 14px;
-  overflow-x: clip;
+  line-height: 1.5;
 }
 .home a:focus-visible,
 .home button:focus-visible,
 .home summary:focus-visible {
-  outline: 2px solid var(--home-accent);
-  outline-offset: 5px;
+  outline: 2px solid #2670be;
+  outline-offset: 4px;
+}
+.home a:hover {
+  color: #0c5aab;
 }
 .home-skip {
   position: absolute;
   left: 16px;
-  top: -70px;
-  z-index: 30;
-  background: var(--home-accent);
-  color: #142012;
+  top: -80px;
+  z-index: 40;
+  background: #164b86;
+  color: #fff;
   padding: 12px 18px;
-  border-radius: 4px;
 }
 .home-skip:focus {
-  top: 12px;
+  top: 10px;
+}
+.broker-utility {
+  background: #142e4c;
+  color: #c8d7e7;
+  font-size: 11px;
+}
+.broker-utility > div {
+  max-width: 1240px;
+  padding: 8px 30px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+.broker-utility > div > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+}
+.broker-utility i {
+  width: 1px;
+  height: 11px;
+  background: #526a84;
 }
 .home-nav {
-  height: 88px;
   max-width: 1240px;
   margin: auto;
   padding: 0 30px;
+  height: 82px;
   display: flex;
   align-items: center;
-  gap: 48px;
-  border-bottom: 1px solid #252b31;
+  gap: 40px;
+  background: #fff;
   position: relative;
   z-index: 5;
 }
 .home-brand {
   display: flex;
   align-items: center;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 1px;
+  gap: 9px;
+  color: #142e4c;
   white-space: nowrap;
 }
-.home-brand > span:first-child {
-  width: 32px;
-  height: 32px;
-  margin-right: 10px;
-  border-radius: 6px;
-  background: var(--home-accent);
-  color: #1e2a18;
-  display: grid;
-  place-items: center;
+.home-brand svg {
+  color: #164b86;
 }
-.home-brand .brand-light {
-  font-weight: 400;
-  color: #a7b4c3;
+.home-brand strong {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
 }
 .home-links {
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 27px;
   margin-left: auto;
 }
-.home-links > a {
-  font-size: 12px;
-  color: #aab3c0;
-  transition: color 0.15s;
-}
-.home-links > a:hover,
-.home-footer nav > a:hover {
-  color: var(--home-accent);
+.home-links a {
+  font-size: 13px;
+  color: #455a71;
+  padding: 28px 0;
 }
 .nav-launch {
   display: flex;
   align-items: center;
-  gap: 19px;
+  gap: 12px;
+  border: 1px solid #164b86;
+  color: #164b86;
+  padding: 10px 15px;
+  border-radius: 3px;
   font-size: 12px;
   font-weight: 600;
-  padding: 12px 16px;
-  border: 1px solid #46513e;
-  border-radius: 5px;
-  color: #d1ecb2;
-  background: #161e15;
+  white-space: nowrap;
 }
 .nav-launch:hover {
-  background: #27351d;
+  background: #f0f5fa;
 }
 .home-menu {
   display: none;
 }
-.home-hero {
+.broker-hero {
+  background: #f3f6f9;
+  border-top: 1px solid #e1e7ed;
+  border-bottom: 1px solid #e1e7ed;
+}
+.broker-hero-inner {
   max-width: 1240px;
   margin: auto;
-  padding: 98px 30px 84px;
+  padding: 54px 30px 44px;
   display: grid;
-  grid-template-columns: 1.45fr 1fr;
+  grid-template-columns: 1fr 1.08fr;
+  gap: 48px;
   align-items: center;
-  gap: 65px;
-  position: relative;
-}
-.hero-orbit {
-  position: absolute;
-  inset: 0 -160px 0 35%;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 75% 48%, #79b33b12, transparent 60%),
-    linear-gradient(#5f765216 1px, transparent 1px),
-    linear-gradient(90deg, #5f765216 1px, transparent 1px);
-  background-size:
-    auto,
-    60px 60px,
-    60px 60px;
-  mask-image: linear-gradient(to right, transparent, #000 50%, transparent);
-}
-.hero-content,
-.hero-card {
-  position: relative;
-  z-index: 1;
 }
 .home-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: #b5c0a9;
-  font: 9px var(--mono);
-  letter-spacing: 1.3px;
-}
-.home-eyebrow > span {
-  width: 5px;
-  height: 5px;
-  display: inline-block;
-  border-radius: 50%;
-  background: var(--home-accent);
-  box-shadow: 0 0 12px #b5f37e33;
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #466987;
+  letter-spacing: 1px;
 }
 .home h1 {
-  font-size: clamp(50px, 6vw, 78px);
-  font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: -4px;
-  margin: 26px 0;
+  font-size: clamp(36px, 3.4vw, 48px);
+  line-height: 1.18;
+  letter-spacing: -1.6px;
+  font-weight: 600;
+  color: #162f4b;
+  margin: 16px 0 20px;
 }
-.home h1 em,
-.home-final h2 em {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
-  color: var(--home-accent);
-  letter-spacing: -3px;
-}
-.hero-description {
-  color: #a0aab9;
-  font-size: 15px;
-  line-height: 1.9;
-  max-width: 500px;
+.broker-introduction > p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: #5b6b7c;
+  max-width: 475px;
 }
 .hero-actions {
   display: flex;
   align-items: center;
-  gap: 28px;
-  margin-top: 34px;
+  gap: 13px;
+  margin-top: 29px;
+  flex-wrap: wrap;
 }
 .home-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 25px;
-  padding: 17px 21px;
-  background: var(--home-accent);
-  color: #142010;
-  border-radius: 5px;
+  gap: 17px;
+  background: #164b86;
+  border: 1px solid #164b86;
+  color: #fff;
+  border-radius: 3px;
+  padding: 12px 17px;
   font-size: 13px;
-  font-weight: 600;
-  transition:
-    background 0.15s,
-    transform 0.15s;
+  font-weight: 500;
+  text-align: center;
 }
-.home-cta:hover {
-  background: #d8ffa1;
-  transform: translateY(-2px);
+.home .home-cta:hover {
+  background: #103e73;
+  color: #fff;
 }
-.home-text-link {
-  display: flex;
+.home-secondary {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  color: #c6d0dd;
+  justify-content: center;
+  border: 1px solid #b8c7d5;
+  color: #1d4878;
+  background: #fff;
+  padding: 12px 16px;
+  border-radius: 3px;
+  font-size: 13px;
 }
-.home-text-link:hover {
-  color: var(--home-accent);
+.home-secondary:hover {
+  border-color: #164b86;
 }
 .hero-fine {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 9px;
-  color: #718071;
-  margin-top: 22px;
+  font-size: 11px;
+  color: #758494;
+  margin-top: 16px;
 }
-.checkmark {
-  font-size: 10px;
-  color: #a6c689;
+.broker-product {
+  min-width: 0;
 }
-.checkmark:nth-of-type(2) {
-  margin-left: 9px;
-}
-.hero-card {
-  border: 1px solid #3d4838;
-  border-radius: 10px;
-  background: linear-gradient(145deg, #1c231c, #121719 70%);
-  padding: 25px;
-  box-shadow: 0 32px 90px #0007;
-  transform: rotate(1deg);
-}
-.capital-heading {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: #a3b39b;
-  font: 8px var(--mono);
-  letter-spacing: 1px;
-}
-.capital-icon {
-  color: var(--home-accent);
-  display: flex;
-}
-.virtual-badge {
-  font-size: 7px;
-  border: 1px solid #45563a;
-  border-radius: 3px;
-  padding: 4px 5px;
-  margin-left: auto;
-  color: #aec990;
-}
-.capital-value {
-  font: 500 clamp(30px, 3.4vw, 46px) var(--mono);
-  letter-spacing: -2px;
-  margin: 27px 0 12px;
-  color: #eef8e8;
-}
-.capital-value > span {
-  color: #6d7a69;
-}
-.capital-caption {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: #9eae97;
-}
-.capital-dot {
-  width: 4px;
-  height: 4px;
-  background: var(--home-accent);
-  border-radius: 50%;
-}
-.capital-divider {
-  height: 1px;
-  background: #303a2e;
-  margin: 25px 0 21px;
-}
-.home-quotes-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font: 7px var(--mono);
-  letter-spacing: 0.5px;
-  color: #83907a;
-  margin-bottom: 12px;
-}
-.home-quotes-heading > span:last-child {
-  color: #bad68e;
-  font-size: 6px;
-}
-.home-quote {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 13px 0;
-  border-bottom: 1px solid #283029;
-}
-.home-quote:hover b {
-  color: var(--home-accent);
-}
-.company-icon {
-  height: 31px;
-  width: 31px;
-  border-radius: 7px;
-  display: grid;
-  place-items: center;
-  font-size: 15px;
-  font-weight: 700;
-}
-.company-0 {
-  background: #e2e9dd;
-  color: #203120;
-}
-.company-1 {
-  background: #a3cc6d;
-  color: #243514;
-}
-.company-2 {
-  background: #6a94ca;
-  color: #101d2f;
-}
-.home-quote > span:nth-child(2) {
-  flex: 1;
-}
-.home-quote b {
-  font-size: 10px;
-  display: block;
-  letter-spacing: 0.5px;
-}
-.home-quote small {
-  display: block;
-  color: #6f7b75;
-  font-size: 9px;
-  margin-top: 4px;
-}
-.home-quote strong {
-  font: 11px var(--mono);
-  font-weight: 400;
-}
-.home-quote > svg {
-  color: #53654c;
-}
-.all-instruments {
+.product-label {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-size: 11px;
+  color: #344d68;
+  margin-bottom: 10px;
+}
+.product-label > span:first-child {
+  font-weight: 600;
+}
+.product-label > span:last-child {
   font-size: 10px;
-  color: #b2c899;
-  padding-top: 19px;
-}
-.home-facts {
-  max-width: 1180px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid #29302b;
-  border-bottom: 1px solid #29302b;
-  padding: 26px 0;
-}
-.home-facts > div {
-  padding: 0 28px;
-  border-right: 1px solid #29302b;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.home-facts > div:first-child {
-  padding-left: 0;
-}
-.home-facts > div:last-child {
-  border: 0;
-}
-.home-facts strong {
-  font-size: 31px;
-  font-weight: 500;
-  letter-spacing: -1px;
-}
-.home-facts strong > span {
-  font-size: 23px;
-  color: #a0b48e;
-}
-.home-facts > div > span {
-  font: 8px var(--mono);
-  color: #7c8877;
-  letter-spacing: 0.7px;
-  line-height: 1.8;
-  max-width: 140px;
-}
-.home-section {
-  max-width: 1180px;
-  margin: auto;
-  padding: 100px 0;
-  scroll-margin-top: 24px;
-}
-.section-kicker {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #889b79;
-  font: 9px var(--mono);
-  letter-spacing: 1.2px;
-}
-.section-kicker > span:last-child {
-  color: #53624d;
-  font-size: 8px;
-}
-.home-section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 30px;
-  margin: 27px 0 40px;
-}
-.home h2 {
-  font-size: clamp(30px, 3.4vw, 46px);
-  font-weight: 500;
-  letter-spacing: -1.8px;
-  line-height: 1.18;
-}
-.home-section-heading > p {
-  font-size: 12px;
-  color: #849183;
-  line-height: 1.9;
-  max-width: 350px;
+  color: #718295;
 }
 .terminal-preview {
   display: block;
-  border: 1px solid #3b4738;
-  border-radius: 9px;
+  border: 1px solid #26374d;
+  border-radius: 4px;
   overflow: hidden;
-  background: #111712;
-  position: relative;
-  max-height: 650px;
-  box-shadow: 0 16px 80px #0005;
-}
-.preview-chrome {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 38px;
-  padding: 0 16px;
-  background: #1a211b;
-  border-bottom: 1px solid #303c2e;
-}
-.preview-chrome > span:first-child {
-  display: flex;
-  gap: 5px;
-}
-.preview-chrome i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #55644b;
-}
-.preview-chrome b {
-  font: 7px var(--mono);
-  color: #839077;
-  letter-spacing: 1px;
-  font-weight: 400;
-}
-.preview-open {
-  font-size: 8px;
-  color: #b2c5a3;
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  background: #11161e;
+  box-shadow: 0 10px 23px #19395c12;
 }
 .terminal-preview img {
   display: block;
   width: 100%;
   height: auto;
-  opacity: 0.92;
-}
-.terminal-preview:hover img {
-  opacity: 1;
-}
-.preview-bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 60px 23px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(transparent, #101713 70%);
-  gap: 20px;
-}
-.preview-bottom > span:first-child {
-  font: 8px var(--mono);
-  letter-spacing: 1px;
-  color: #769067;
-}
-.preview-bottom > span:last-child {
-  font-size: 11px;
-  color: var(--home-accent);
-  display: flex;
-  align-items: center;
-  gap: 15px;
+  max-height: 360px;
+  object-fit: cover;
+  object-position: top;
 }
 .preview-caption {
-  font: 8px var(--mono);
-  color: #56664d;
-  text-align: center;
-  margin-top: 14px;
+  font-size: 9px;
+  color: #7b8b9c;
+  margin: 10px 0 0;
+  line-height: 1.5;
 }
-.feature-grid {
+.broker-specifications {
+  max-width: 1180px;
+  margin: auto;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 34px;
-  margin-top: 64px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 24px 0;
+  border-bottom: 1px solid #dce3ea;
 }
-.feature-grid > article {
-  border-top: 1px solid #313d2b;
-  padding-top: 23px;
+.broker-specifications > div {
+  padding: 0 26px;
+  border-right: 1px solid #dce3ea;
 }
-.feature-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 26px;
-  color: #aac891;
+.broker-specifications > div:first-child {
+  padding-left: 0;
 }
-.feature-top > span {
-  font: 9px var(--mono);
-  color: #55654c;
+.broker-specifications > div:last-child {
+  border: 0;
+  padding-right: 0;
+}
+.broker-specifications span {
+  display: block;
+  font-size: 11px;
+  color: #738293;
+  margin-bottom: 5px;
+}
+.broker-specifications strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #223d59;
+}
+.broker-section {
+  max-width: 1180px;
+  margin: auto;
+  padding: 64px 0;
+  scroll-margin-top: 25px;
+}
+.home h2 {
+  font-size: 28px;
+  line-height: 1.3;
+  letter-spacing: -0.7px;
+  font-weight: 600;
+  color: #18344f;
 }
 .home h3 {
   font-size: 17px;
-  font-weight: 500;
-  letter-spacing: -0.5px;
   line-height: 1.4;
-  margin: 0 0 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0 0 12px;
+  color: #253f59;
 }
-.feature-grid p,
-.steps-grid p {
-  font-size: 12px;
-  line-height: 1.9;
-  color: #82907d;
+.market-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 52px;
 }
-.feature-tags {
+.section-title {
   display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
-  margin-top: 21px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
 }
-.feature-tags > span {
-  font: 8px var(--mono);
-  color: #98ae88;
-  padding: 5px 7px;
-  background: #161f14;
-  border: 1px solid #2d3b27;
+.section-description {
+  font-size: 13px;
+  color: #6c7c8e;
+  line-height: 1.8;
+  margin-top: 9px;
+  margin-bottom: 24px;
+}
+.market-feed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #536e88;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.market-feed i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #39866d;
+}
+.market-feed.offline i {
+  background: #a47337;
+}
+.broker-market-table {
+  border-top: 1px solid #d7e0e9;
+  border-bottom: 1px solid #d7e0e9;
+  overflow: auto;
+}
+.broker-market-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.broker-market-table th {
+  background: #f6f8fa;
+  color: #728294;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 11px 13px;
+  text-align: right;
+  border-bottom: 1px solid #dce3ea;
+}
+.broker-market-table th:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+.broker-market-table td {
+  padding: 13px;
+  font-size: 12px;
+  text-align: right;
+  border-bottom: 1px solid #e6ebf0;
+  color: #3e5670;
+  font-family: Inter, Arial, sans-serif;
+  line-height: 1.5;
+}
+.broker-market-table td:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+.broker-market-table tr:last-child td {
+  border-bottom: 0;
+}
+.home-quote {
+  display: block;
+  color: #22476e;
+}
+.home-quote b {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+}
+.home-quote small {
+  font-size: 10px;
+  font-family: Inter, Arial, sans-serif;
+  color: #8592a2;
+  display: block;
+  margin-top: 2px;
+}
+.broker-market-table .market-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 12px;
+  color: #253f59;
+}
+.broker-market-table .quote-time {
+  font-size: 10px;
+  color: #8290a0;
+  white-space: nowrap;
+}
+.quote-action {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  color: #1c5795;
+  font-size: 10px;
+}
+.market-footnote {
+  font-size: 10px;
+  color: #8894a1;
+  line-height: 1.7;
+  margin-top: 12px;
+}
+.account-access {
+  border: 1px solid #d5e0e9;
+  background: #f5f8fb;
+  align-self: start;
+  padding: 27px 25px;
   border-radius: 3px;
+  margin-top: 4px;
 }
-.home-how {
-  border-top: 1px solid #283225;
-  border-bottom: 1px solid #283225;
+.account-access > svg {
+  color: #315c85;
+  margin-bottom: 15px;
 }
-.home-how .home-section-heading {
-  margin-bottom: 54px;
+.account-access h3 {
+  font-size: 20px;
 }
-.home-how .home-section-heading > a {
-  padding-bottom: 6px;
+.account-access > p {
+  font-size: 13px;
+  color: #667b90;
+  line-height: 1.8;
 }
-.steps-grid {
+.account-access ul {
+  list-style: none;
+  padding: 0;
+  margin: 23px 0;
+  color: #576e85;
+  font-size: 12px;
+  line-height: 2.3;
+}
+.account-access li:before {
+  content: "✓";
+  color: #346b53;
+  margin-right: 10px;
+  font-size: 11px;
+}
+.account-access .home-cta {
+  width: 100%;
+  font-size: 12px;
+  gap: 10px;
+  padding: 12px 10px;
+}
+.returning-account {
+  border-top: 1px solid #dbe4ed;
+  margin-top: 25px;
+  padding-top: 19px;
+  font-size: 11px;
+  color: #8391a0;
+}
+.returning-account > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #265c94;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.broker-platform {
+  background: #f4f7fa;
+  border-top: 1px solid #e2e8ed;
+  border-bottom: 1px solid #e2e8ed;
+}
+.section-heading-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 30px;
+}
+.section-heading-row h2 {
+  margin-top: 10px;
+}
+.home-text-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1d568f;
+  font-size: 12px;
+  white-space: nowrap;
+  padding-bottom: 5px;
+}
+.broker-features {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 60px;
-  position: relative;
+  gap: 42px;
+  margin-top: 39px;
 }
-.steps-grid:before {
-  content: "";
-  position: absolute;
-  top: 24px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #2d3a27;
+.broker-features article {
+  border-top: 1px solid #c9d7e4;
+  padding-top: 24px;
 }
-.step-number {
+.broker-features article > svg {
+  color: #36648e;
+  margin-bottom: 16px;
+}
+.broker-features p {
+  font-size: 13px;
+  color: #6b7d8e;
+  line-height: 1.9;
+}
+.broker-how {
+  border-bottom: 1px solid #dce3ea;
+}
+.broker-how ol {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
+  padding: 0;
+  margin: 36px 0 0;
+}
+.broker-how li {
+  display: flex;
+  align-items: start;
+  gap: 15px;
+}
+.broker-how li > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #21588d;
   display: grid;
   place-items: center;
-  width: 49px;
-  height: 49px;
-  position: relative;
-  border: 1px solid #465839;
-  background: #141d11;
-  color: #b8d79f;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  background: #edf3f9;
+  border: 1px solid #cedde9;
   border-radius: 50%;
-  font: 12px var(--mono);
-  margin-bottom: 27px;
-  box-shadow: 0 0 0 9px #0b0e12;
 }
-.steps-grid h3 {
-  font-size: 21px;
+.broker-how h3 {
+  font-size: 15px;
+  margin-top: 3px;
+  margin-bottom: 8px;
 }
-.home-faq {
-  display: grid;
-  grid-template-columns: 1fr 1.55fr;
-  gap: 90px;
-}
-.faq-intro .section-kicker {
-  margin-bottom: 26px;
-}
-.faq-intro > p:last-child {
+.broker-how p {
   font-size: 12px;
+  color: #6e8092;
+  line-height: 1.9;
+}
+.broker-faq {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 80px;
+}
+.broker-faq > div:first-child h2 {
+  margin: 11px 0 17px;
+  font-size: 26px;
+}
+.broker-faq > div:first-child > p {
+  font-size: 13px;
   line-height: 1.8;
-  color: #84917e;
-  margin-top: 23px;
+  color: #758697;
+  max-width: 260px;
 }
 .faq-list details {
-  border-top: 1px solid #2c3628;
+  border-top: 1px solid #dce3ea;
 }
 .faq-list details:last-child {
-  border-bottom: 1px solid #2c3628;
+  border-bottom: 1px solid #dce3ea;
 }
 .faq-list summary {
-  list-style: none;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
+  list-style: none;
+  cursor: pointer;
+  padding: 19px 0;
+  color: #3a526b;
   font-size: 13px;
   font-weight: 500;
-  gap: 20px;
-  padding: 23px 0;
-  color: #c9d4c4;
 }
 .faq-list summary::-webkit-details-marker {
   display: none;
 }
-.faq-list summary > span {
-  color: #94ae80;
-  font: 20px var(--mono);
+.faq-plus {
+  font-size: 19px;
   font-weight: 400;
-  transition: transform 0.15s;
+  color: #627f99;
 }
-.faq-list details[open] summary > span {
+.faq-list details[open] .faq-plus {
   transform: rotate(45deg);
 }
 .faq-list details > p {
   font-size: 12px;
+  color: #6f8294;
   line-height: 1.9;
-  color: #8f9c87;
-  padding: 0 30px 24px 0;
-  max-width: 620px;
+  padding: 0 25px 20px 0;
 }
-.home-final {
+.broker-final {
   max-width: 1180px;
-  margin: 0 auto 80px;
-  border: 1px solid #37472d;
-  border-radius: 10px;
-  text-align: center;
-  padding: 70px 20px;
-  background:
-    radial-gradient(ellipse at 50% 0, #8baa3c17, transparent 70%), #11170e;
-  position: relative;
-  overflow: hidden;
+  margin: 0 auto 64px;
+  padding: 29px 33px;
+  background: #eef4f9;
+  border: 1px solid #d4e1ec;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  border-radius: 3px;
 }
-.home-final .home-eyebrow {
-  justify-content: center;
-  font-size: 8px;
+.broker-final h2 {
+  font-size: 22px;
+  letter-spacing: -0.4px;
 }
-.home-final h2 {
-  font-size: clamp(37px, 4vw, 56px);
-  line-height: 1.18;
-  letter-spacing: -2px;
-  margin: 25px 0 30px;
-}
-.home-final h2 em {
-  letter-spacing: -1px;
-}
-.home-final > p {
-  font-size: 10px;
-  color: #748768;
-  margin-top: 19px;
+.broker-final p {
+  font-size: 12px;
+  color: #74899c;
+  margin-top: 7px;
 }
 .home-footer {
-  max-width: 1180px;
-  margin: auto;
-  border-top: 1px solid #2e3928;
+  background: #142e4c;
+  color: #c2d1e0;
+  padding: 37px max(30px, calc((100vw - 1180px) / 2)) 27px;
+}
+.footer-main {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 40px;
-  padding: 40px 0 23px;
+  gap: 30px;
+  align-items: start;
 }
-.home-footer .home-brand {
-  font-size: 13px;
+.home-footer .home-brand,
+.home-footer .home-brand svg {
+  color: #edf4fc;
 }
-.home-footer .home-brand > span:first-child {
-  width: 27px;
-  height: 27px;
+.home-footer .home-brand strong {
+  font-size: 18px;
 }
-.home-footer > div:first-child > p {
+.footer-main > div > p {
   font-size: 11px;
-  color: #76856b;
-  margin-top: 14px;
+  color: #8da3bb;
+  margin-top: 11px;
 }
 .home-footer nav {
   display: flex;
-  align-items: start;
-  gap: 30px;
-  padding-top: 6px;
+  gap: 24px;
+  padding-top: 7px;
 }
-.home-footer nav > a {
+.home-footer nav a {
   font-size: 11px;
-  color: #a7b49d;
+  color: #b0c3d7;
 }
-.footer-bottom {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding-top: 24px;
-  border-top: 1px solid #232f1f;
-  color: #67785b;
-  font: 8px var(--mono);
-  letter-spacing: 0.3px;
+.home .home-footer a:hover {
+  color: #fff;
 }
-.home section[id] {
-  scroll-margin-top: 25px;
+.footer-disclosure {
+  border-top: 1px solid #34506d;
+  margin-top: 28px;
+  padding-top: 21px;
+  color: #819ab4;
+  font-size: 10px;
+  line-height: 1.9;
+}
+.footer-disclosure p {
+  max-width: 1000px;
+}
+.footer-disclosure p + p {
+  margin-top: 8px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 @media (max-width: 1250px) {
-  .home-facts,
-  .home-section,
-  .home-final,
-  .home-footer {
+  .broker-specifications,
+  .broker-section,
+  .broker-final {
     margin-left: 30px;
     margin-right: 30px;
   }
-  .home-hero {
-    gap: 40px;
+  .home-nav {
+    gap: 25px;
   }
-  .hero-card {
-    padding: 22px;
+  .home-links {
+    gap: 23px;
   }
-  .home-facts > div {
-    padding: 0 20px;
-    gap: 14px;
-  }
-  .home-facts > div > span {
-    font-size: 7px;
-  }
-  .home-section {
-    padding-top: 80px;
-    padding-bottom: 80px;
-  }
-  .home-faq {
-    gap: 55px;
-  }
-  .home-hero {
-    padding-top: 80px;
-    padding-bottom: 75px;
+  .broker-hero-inner {
+    gap: 35px;
   }
   .home h1 {
-    font-size: 65px;
+    font-size: 39px;
+    letter-spacing: -1.2px;
   }
-  .terminal-preview {
-    max-height: 560px;
+  .broker-introduction > p {
+    font-size: 14px;
+  }
+  .home-cta,
+  .home-secondary {
+    font-size: 12px;
+    padding: 11px 13px;
+  }
+  .hero-actions {
+    gap: 10px;
+  }
+  .broker-specifications > div {
+    padding: 0 18px;
+  }
+  .broker-specifications strong {
+    font-size: 12px;
+  }
+  .market-overview {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 35px;
+  }
+  .account-access {
+    padding: 24px 21px;
+  }
+  .broker-section {
+    padding-top: 53px;
+    padding-bottom: 53px;
   }
 }
 @media (max-width: 950px) {
+  .home-brand strong {
+    font-size: 19px;
+  }
   .home-nav {
-    gap: 24px;
+    gap: 22px;
   }
   .home-links {
-    gap: 22px;
+    gap: 17px;
   }
-  .home-links > a {
+  .home-links a {
     font-size: 11px;
-  }
-  .home-brand {
-    font-size: 13px;
   }
   .nav-launch {
+    padding: 9px 12px;
     font-size: 11px;
-    gap: 10px;
-    padding: 11px 13px;
-  }
-  .home-hero {
-    gap: 28px;
-    grid-template-columns: 1.2fr 1fr;
-    padding-top: 65px;
-    padding-bottom: 60px;
-  }
-  .home h1 {
-    font-size: 52px;
-    letter-spacing: -2.8px;
-  }
-  .home h1 em {
-    letter-spacing: -2.5px;
-  }
-  .hero-description {
-    font-size: 12px;
-  }
-  .hero-actions {
-    gap: 18px;
-    margin-top: 25px;
-  }
-  .home-cta {
-    font-size: 11px;
-    gap: 14px;
-    padding: 15px 16px;
-  }
-  .home-text-link {
-    font-size: 10px;
-    gap: 7px;
-  }
-  .hero-fine {
-    font-size: 7px;
-    gap: 5px;
-  }
-  .home-eyebrow {
-    font-size: 7px;
-    letter-spacing: 1px;
-  }
-  .hero-card {
-    padding: 20px;
-  }
-  .capital-heading {
-    font-size: 6px;
-    gap: 7px;
-  }
-  .capital-heading .virtual-badge {
-    font-size: 6px;
-    letter-spacing: 0;
-  }
-  .capital-value {
-    font-size: 33px;
-    letter-spacing: -1.5px;
-    margin-top: 21px;
-  }
-  .capital-caption {
-    font-size: 8px;
-  }
-  .home-quotes-heading {
-    font-size: 6px;
-  }
-  .home-quotes-heading > span:last-child {
-    display: none;
-  }
-  .home-quote {
-    padding: 11px 0;
     gap: 9px;
   }
-  .home-quote small {
-    font-size: 8px;
+  .broker-hero-inner {
+    padding-top: 45px;
+    padding-bottom: 40px;
+    gap: 28px;
   }
-  .home-quote strong {
+  .home h1 {
+    font-size: 34px;
+    letter-spacing: -0.8px;
+  }
+  .broker-introduction > p {
+    font-size: 13px;
+  }
+  .hero-actions {
+    align-items: stretch;
+    gap: 10px;
+  }
+  .home-cta,
+  .home-secondary {
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+  .hero-fine {
+    font-size: 9px;
+  }
+  .broker-specifications strong {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .broker-specifications span {
     font-size: 10px;
   }
-  .home-facts {
-    padding: 21px 0;
-  }
-  .home-facts > div {
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
-  }
-  .home-facts > div:first-child {
-    padding-left: 20px;
-  }
-  .home-facts strong {
-    font-size: 29px;
-  }
-  .home-facts > div > span {
-    font-size: 6px;
-    max-width: none;
-  }
-  .home-section-heading > p {
-    font-size: 11px;
-  }
-  .feature-grid {
-    gap: 22px;
-  }
-  .feature-grid h3 {
-    font-size: 15px;
-  }
-  .feature-grid p,
-  .steps-grid p {
-    font-size: 11px;
-  }
-  .steps-grid {
-    gap: 35px;
-  }
-  .home-faq {
-    gap: 35px;
-    grid-template-columns: 1fr 1.4fr;
-  }
-  .faq-list summary {
-    font-size: 12px;
+  .market-overview {
+    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) 240px;
   }
   .home h2 {
-    font-size: 35px;
+    font-size: 25px;
   }
-  .home-footer nav {
+  .account-access {
+    padding: 22px 18px;
+  }
+  .account-access h3 {
+    font-size: 18px;
+  }
+  .account-access > p,
+  .account-access ul {
+    font-size: 11px;
+  }
+  .account-access .home-cta {
+    font-size: 10px;
+    gap: 6px;
+  }
+  .broker-features {
+    gap: 26px;
+  }
+  .broker-features p {
+    font-size: 12px;
+  }
+  .broker-features h3 {
+    font-size: 16px;
+  }
+  .broker-how ol {
     gap: 24px;
   }
-  .terminal-preview {
-    max-height: 450px;
+  .broker-how li {
+    gap: 10px;
+  }
+  .broker-how p {
+    font-size: 11px;
+  }
+  .broker-faq {
+    gap: 40px;
+  }
+  .broker-faq > div:first-child h2 {
+    font-size: 24px;
+  }
+  .broker-market-table .quote-time {
+    display: none;
+  }
+  .broker-market-table th:nth-child(3) {
+    display: none;
+  }
+  .footer-main nav {
+    gap: 18px;
   }
 }
 @media (max-width: 700px) {
+  .broker-utility > div {
+    padding: 7px 20px;
+    font-size: 9px;
+  }
+  .broker-utility > div > span:last-child {
+    font-size: 8px;
+    gap: 7px;
+  }
+  .broker-utility i {
+    height: 9px;
+  }
   .home-nav {
     height: 70px;
     padding: 0 20px;
     gap: 14px;
   }
   .home-brand {
-    font-size: 12px;
-    letter-spacing: 0.7px;
+    gap: 6px;
   }
-  .home-brand > span:first-child {
-    height: 28px;
-    width: 28px;
-    margin-right: 8px;
+  .home-brand strong {
+    font-size: 19px;
   }
-  .home-nav .nav-launch {
+  .home-brand svg {
+    width: 24px;
+  }
+  .nav-launch {
     margin-left: auto;
     font-size: 10px;
-    padding: 9px 11px;
-    gap: 8px;
+    padding: 8px 9px;
+    gap: 7px;
+  }
+  .nav-launch svg {
+    width: 12px;
   }
   .home-menu {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    color: #bbd3a6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #355d82;
     font-size: 18px;
+    padding: 0;
+    width: 25px;
+    height: 25px;
   }
   .home-links {
     display: none;
     position: absolute;
-    left: 16px;
-    right: 16px;
-    top: 65px;
-    background: #151d14;
-    border: 1px solid #3d4d33;
-    border-radius: 6px;
-    padding: 10px;
-    box-shadow: 0 10px 40px #0009;
+    top: 63px;
+    left: 15px;
+    right: 15px;
+    background: #fff;
+    border: 1px solid #cad8e4;
+    box-shadow: 0 7px 20px #142e4c17;
     z-index: 10;
+    padding: 8px;
+    gap: 0;
   }
   .home-links.open {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    align-items: stretch;
   }
   .home-links a {
-    padding: 12px;
+    padding: 13px;
     font-size: 13px;
   }
-  .home-hero {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding: 55px 24px 45px;
-    gap: 44px;
-  }
-  .hero-orbit {
-    inset: 30% 0 0;
-  }
-  .hero-content {
-    max-width: 550px;
+  .broker-hero-inner {
+    grid-template-columns: 1fr;
+    padding: 35px 24px 30px;
+    gap: 35px;
   }
   .home-eyebrow {
-    font-size: 8px;
+    font-size: 10px;
+    letter-spacing: 0.7px;
   }
   .home h1 {
-    font-size: clamp(48px, 11.5vw, 70px);
-    line-height: 1.08;
-    letter-spacing: -2.6px;
-    margin: 22px 0;
+    font-size: 35px;
+    line-height: 1.2;
+    letter-spacing: -0.9px;
+    margin: 12px 0 17px;
   }
-  .home h1 em {
-    letter-spacing: -2.8px;
-  }
-  .hero-description {
-    font-size: 13px;
-    line-height: 1.85;
+  .broker-introduction > p {
+    font-size: 14px;
+    line-height: 1.8;
   }
   .hero-actions {
-    gap: 23px;
-    margin-top: 26px;
+    margin-top: 24px;
+    gap: 10px;
+    flex-wrap: wrap;
   }
-  .home-cta {
-    font-size: 12px;
-    padding: 15px 18px;
-    gap: 18px;
-  }
-  .home-text-link {
+  .home-cta,
+  .home-secondary {
     font-size: 11px;
+    padding: 12px 13px;
+    gap: 9px;
   }
   .hero-fine {
-    font-size: 8px;
-    gap: 6px;
-    margin-top: 20px;
+    font-size: 10px;
+    margin-top: 14px;
   }
-  .hero-card {
-    transform: none;
-    max-width: 500px;
-    width: 100%;
-    padding: 24px;
-    align-self: center;
-  }
-  .capital-heading {
-    font-size: 8px;
-  }
-  .capital-value {
-    font-size: 43px;
-    margin-top: 26px;
-  }
-  .capital-caption {
+  .product-label {
     font-size: 10px;
   }
-  .capital-divider {
-    margin: 22px 0;
+  .product-label > span:last-child {
+    font-size: 9px;
   }
-  .home-quotes-heading {
-    font-size: 7px;
+  .preview-caption {
+    font-size: 8px;
   }
-  .home-quotes-heading > span:last-child {
-    display: block;
-    font-size: 6px;
+  .broker-specifications,
+  .broker-section,
+  .broker-final {
+    margin-left: 24px;
+    margin-right: 24px;
   }
-  .home-quote {
-    padding: 13px 0;
+  .broker-specifications {
+    grid-template-columns: 1fr 1fr;
+    gap: 21px 0;
+    padding: 23px 0;
+  }
+  .broker-specifications > div {
+    padding: 0 0 0 18px;
+  }
+  .broker-specifications > div:nth-child(odd) {
+    padding-left: 0;
+  }
+  .broker-specifications > div:nth-child(even) {
+    border: 0;
+  }
+  .broker-specifications strong {
+    font-size: 11px;
+  }
+  .broker-specifications span {
+    font-size: 9px;
+  }
+  .broker-section {
+    padding-top: 39px;
+    padding-bottom: 39px;
+  }
+  .market-overview {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .section-title {
+    gap: 10px;
+  }
+  .home h2 {
+    font-size: 25px;
+    letter-spacing: -0.5px;
+  }
+  .market-feed {
+    font-size: 8px;
+  }
+  .section-description {
+    font-size: 12px;
+    margin-top: 9px;
+    margin-bottom: 20px;
+  }
+  .broker-market-table th {
+    font-size: 9px;
+    padding: 10px;
+  }
+  .broker-market-table td {
+    padding: 12px 10px;
   }
   .home-quote b {
-    font-size: 11px;
+    font-size: 12px;
   }
   .home-quote small {
     font-size: 9px;
   }
-  .home-quote strong {
-    font-size: 12px;
-  }
-  .home-facts,
-  .home-section,
-  .home-final,
-  .home-footer {
-    margin-left: 24px;
-    margin-right: 24px;
-  }
-  .home-facts {
-    grid-template-columns: 1fr 1fr;
-    gap: 26px 0;
-    padding: 24px 0;
-  }
-  .home-facts > div:nth-child(2) {
-    border: 0;
-  }
-  .home-facts > div > span {
-    font-size: 7px;
-    line-height: 1.5;
-  }
-  .home-facts strong {
-    font-size: 33px;
-  }
-  .home-section {
-    padding: 58px 0;
-  }
-  .section-kicker {
-    font-size: 8px;
-    letter-spacing: 0.7px;
-  }
-  .section-kicker > span:last-child {
-    display: none;
-  }
-  .home-section-heading {
-    display: block;
-    margin: 23px 0 30px;
-  }
-  .home h2 {
-    font-size: 35px;
-    letter-spacing: -1.3px;
-  }
-  .home-section-heading > p {
-    margin-top: 21px;
-    font-size: 12px;
-    line-height: 1.9;
-  }
-  .desktop-break {
-    display: none;
-  }
-  .terminal-preview {
-    max-height: 290px;
-    border-radius: 5px;
-  }
-  .preview-chrome {
-    height: 29px;
-    padding: 0 10px;
-  }
-  .preview-chrome b {
-    font-size: 5px;
-    letter-spacing: 0.3px;
-  }
-  .preview-chrome i {
-    width: 4px;
-    height: 4px;
-  }
-  .preview-open {
-    font-size: 6px;
-    gap: 4px;
-  }
-  .preview-open svg {
-    width: 10px;
-  }
-  .terminal-preview img {
-    min-width: 590px;
-    max-width: none;
-    width: 170%;
-    transform: translateX(-10%);
-  }
-  .preview-bottom {
-    padding: 50px 12px 13px;
-  }
-  .preview-bottom > span:first-child {
-    display: none;
-  }
-  .preview-bottom > span:last-child {
-    font-size: 10px;
-    margin-left: auto;
-  }
-  .preview-caption {
-    font-size: 6px;
-    line-height: 1.7;
-    padding: 0 12px;
-  }
-  .feature-grid {
-    grid-template-columns: 1fr;
-    gap: 30px;
-    margin-top: 38px;
-  }
-  .feature-top {
-    margin-bottom: 18px;
-  }
-  .feature-grid h3 {
-    font-size: 19px;
-    margin-bottom: 12px;
-  }
-  .feature-grid p {
-    font-size: 12px;
-    max-width: 460px;
-  }
-  .feature-tags {
-    margin-top: 17px;
-  }
-  .home-how .home-section-heading {
-    margin-bottom: 32px;
-  }
-  .home-how .home-section-heading > a {
-    margin-top: 23px;
-  }
-  .steps-grid {
-    grid-template-columns: 1fr;
-    gap: 31px;
-  }
-  .steps-grid:before {
-    display: none;
-  }
-  .steps-grid article {
-    display: grid;
-    grid-template-columns: 43px 1fr;
-    gap: 0 18px;
-  }
-  .step-number {
-    height: 40px;
-    width: 40px;
-    font-size: 10px;
-    grid-row: 1/3;
-    margin: 0;
-  }
-  .steps-grid h3 {
-    font-size: 18px;
-    margin-bottom: 9px;
-    padding-top: 7px;
-  }
-  .steps-grid p {
-    font-size: 12px;
-    grid-column: 2;
-  }
-  .home-faq {
-    display: block;
-  }
-  .faq-intro .section-kicker {
-    margin-bottom: 23px;
-  }
-  .faq-intro > p:last-child {
-    margin-top: 18px;
-    font-size: 12px;
-  }
-  .faq-list {
-    margin-top: 31px;
-  }
-  .faq-list summary {
-    padding: 20px 0;
-    font-size: 12px;
-    line-height: 1.5;
-  }
-  .faq-list details > p {
-    padding-right: 10px;
-    font-size: 12px;
-  }
-  .home-final {
-    padding: 47px 15px;
-    margin-bottom: 50px;
-  }
-  .home-final h2 {
-    font-size: 35px;
-    letter-spacing: -1.1px;
-  }
-  .home-final .home-eyebrow {
-    font-size: 7px;
-    letter-spacing: 0.7px;
-  }
-  .home-final h2 em {
-    letter-spacing: -1.2px;
-  }
-  .home-footer {
-    padding-top: 30px;
-    gap: 27px;
-  }
-  .home-footer nav {
-    flex-wrap: wrap;
-    width: 100%;
-    gap: 24px;
-  }
-  .home-footer nav > a {
+  .broker-market-table .market-price {
     font-size: 11px;
   }
-  .footer-bottom {
-    flex-direction: column;
-    gap: 12px;
-    font-size: 7px;
-    line-height: 1.7;
-    padding-top: 20px;
+  .quote-action {
+    font-size: 10px;
+    gap: 3px;
+  }
+  .market-footnote {
+    font-size: 9px;
+  }
+  .account-access {
+    padding: 23px;
+    margin-top: 0;
+  }
+  .account-access h3 {
+    font-size: 20px;
+  }
+  .account-access > p,
+  .account-access ul {
+    font-size: 12px;
+  }
+  .account-access ul {
+    margin: 18px 0;
+  }
+  .account-access .home-cta {
+    font-size: 12px;
+  }
+  .returning-account {
+    margin-top: 20px;
+    padding-top: 17px;
+  }
+  .section-heading-row {
+    display: block;
+  }
+  .section-heading-row h2 {
+    font-size: 26px;
+    margin-top: 10px;
+    max-width: 340px;
+  }
+  .home-text-link {
+    margin-top: 19px;
+    font-size: 12px;
+  }
+  .broker-features {
+    grid-template-columns: 1fr;
+    gap: 27px;
+    margin-top: 30px;
+  }
+  .broker-features article {
+    padding-top: 22px;
+  }
+  .broker-features article > svg {
+    margin-bottom: 12px;
+  }
+  .broker-features h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  .broker-features p {
+    font-size: 13px;
+  }
+  .broker-how ol {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 28px;
+  }
+  .broker-how li {
+    gap: 15px;
+  }
+  .broker-how h3 {
+    font-size: 16px;
+  }
+  .broker-how p {
+    font-size: 12px;
+  }
+  .broker-faq {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .broker-faq > div:first-child h2 {
+    font-size: 26px;
+    max-width: 290px;
+  }
+  .broker-faq > div:first-child > p {
+    max-width: none;
+    font-size: 12px;
+  }
+  .faq-list summary {
+    font-size: 12px;
+    padding: 19px 0;
+    line-height: 1.6;
+  }
+  .faq-list details > p {
+    font-size: 12px;
+    padding-right: 0;
+  }
+  .broker-final {
+    margin-bottom: 37px;
+    display: block;
+    padding: 23px;
+  }
+  .broker-final h2 {
+    font-size: 21px;
+  }
+  .broker-final p {
+    font-size: 12px;
+    line-height: 1.8;
+    margin-top: 9px;
+  }
+  .broker-final .home-cta {
+    margin-top: 20px;
+    font-size: 12px;
+  }
+  .home-footer {
+    padding: 30px 24px 24px;
+  }
+  .footer-main {
+    display: block;
+  }
+  .home-footer nav {
+    margin-top: 23px;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+  .home-footer nav a {
+    font-size: 11px;
+  }
+  .footer-disclosure {
+    font-size: 9px;
+    margin-top: 24px;
+  }
+  .footer-disclosure p + p {
+    margin-top: 10px;
   }
 }
-@media (max-width: 375px) {
+@media (max-width: 370px) {
   .home-nav {
     padding: 0 14px;
-    gap: 10px;
+    gap: 9px;
   }
-  .home-brand {
-    font-size: 10px;
+  .home-brand strong {
+    font-size: 17px;
   }
-  .home-nav .nav-launch {
+  .home-brand svg {
+    width: 21px;
+  }
+  .nav-launch {
     font-size: 9px;
-    padding: 9px;
+    padding: 8px;
   }
-  .home-nav .nav-launch svg {
-    width: 12px;
+  .broker-utility > div {
+    padding: 7px 14px;
   }
-  .home-hero {
+  .broker-utility > div > span:last-child {
+    font-size: 7px;
+  }
+  .home h1 {
+    font-size: 31px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .home-cta,
+  .home-secondary {
+    font-size: 12px;
+  }
+  .broker-hero-inner {
     padding-left: 20px;
     padding-right: 20px;
   }
-  .home h1 {
-    font-size: 45px;
-  }
-  .hero-actions {
-    gap: 16px;
-  }
-  .home-cta {
-    font-size: 11px;
-    padding: 14px;
-  }
-  .home-text-link {
-    font-size: 10px;
-  }
-  .hero-fine {
-    font-size: 7px;
-  }
-  .home-facts,
-  .home-section,
-  .home-final,
-  .home-footer {
+  .broker-specifications,
+  .broker-section,
+  .broker-final {
     margin-left: 20px;
     margin-right: 20px;
   }

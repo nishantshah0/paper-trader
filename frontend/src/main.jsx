@@ -7,7 +7,7 @@ import "./home.css";
 const terminal = /^\/terminal\/?$/.test(window.location.pathname);
 document.title = terminal
   ? "PaperTrader — Trading terminal"
-  : "PaperTrader — Get a feel for the market";
+  : "PaperTrader — Practice trading with virtual funds";
 createRoot(document.getElementById("root")).render(
   terminal ? <App /> : <Home />,
 );
