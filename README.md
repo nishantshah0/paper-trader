@@ -4,7 +4,9 @@ A local paper-trading desk built with Java 21, Spring Boot, Postgres, and React.
 
 **Simulation only.** No brokerage connection, no real funds, and no real orders. The default feed uses simulated prices. Optional Finnhub mode uses provider quotes and rejects execution against stale prices.
 
-![Trading dashboard](docs/dashboard.png)
+![PaperTrader home page](docs/home.png)
+
+[View the trading terminal](docs/dashboard.png)
 
 ## Run the complete app
 
@@ -16,7 +18,7 @@ cd paper-trader
 docker compose --profile app up --build -d --wait
 ```
 
-Open **http://localhost:8080**. Create a lowercase account name to receive $100,000 in synthetic cash. Keep the account ID to reopen it in another browser. The first image build downloads Java and Node dependencies and can take several minutes.
+Open **http://localhost:8080** for the home page, including the platform overview, getting-started guide, and FAQ. Choose **Launch terminal** or go directly to **http://localhost:8080/terminal**. Create a lowercase account name to receive $100,000 in synthetic cash. Keep the account ID to reopen it in another browser. The first image build downloads Java and Node dependencies and can take several minutes.
 
 The terminal has a searchable watchlist, chart crosshair and time ranges, quantity shortcuts, and keyboard-accessible activity tabs. Recent chart samples survive browser refreshes; the server keeps up to 240 observed quotes per symbol in memory and clears them on application restart. No historical prices are fabricated.
 
@@ -87,7 +89,7 @@ npm test                           # Requires the complete app on localhost:8080
 
 Set `E2E_BASE_URL` to test another local instance. Browser tests create their own synthetic accounts; use a disposable database when a clean leaderboard matters.
 
-Tests cover market execution, limit crossings, scheduled fills, cancellation, rejected orders, concurrent spending, duplicate retries, fill/cancel races, stale quotes, schema migrations, P&L, and two-tab WebSocket delivery. Browser checks include desktop and mobile layouts. GitHub Actions runs the backend suite, builds the complete Docker app, and runs the browser suite.
+Tests cover market execution, limit crossings, scheduled fills, cancellation, rejected orders, concurrent spending, duplicate retries, fill/cancel races, stale quotes, schema migrations, P&L, and two-tab WebSocket delivery. Browser checks include desktop and mobile layouts, home-to-terminal navigation, instrument links, direct route refreshes, and the mobile menu/FAQ. GitHub Actions runs the backend suite, builds the complete Docker app, and runs the browser suite.
 
 ## API
 
