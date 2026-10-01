@@ -29,7 +29,7 @@ public class PortfolioService {
         this.quotes = quotes;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public PortfolioResponse portfolio(Long accountId) {
         Account account = accounts.get(accountId);
         List<PositionView> views = new ArrayList<>();
