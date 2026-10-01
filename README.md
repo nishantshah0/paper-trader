@@ -18,7 +18,9 @@ docker compose --profile app up --build -d --wait
 
 Open **http://localhost:8080**. Create a lowercase account name to receive $100,000 in synthetic cash. Keep the account ID to reopen it in another browser. The first image build downloads Java and Node dependencies and can take several minutes.
 
-The dashboard includes a watchlist, session price chart, order ticket, positions, open orders and cancellation, trade history, and a leaderboard ranked by percentage return. Prices update every 15 seconds in demo mode; the matcher checks open orders every second.
+The terminal has a searchable watchlist, chart crosshair and time ranges, quantity shortcuts, and keyboard-accessible activity tabs. Recent chart samples survive browser refreshes; the server keeps up to 240 observed quotes per symbol in memory and clears them on application restart. No historical prices are fabricated.
+
+The dashboard includes a watchlist, interactive price chart with recent observed history, order ticket, positions, open orders and cancellation, trade history, and a leaderboard ranked by percentage return. Prices update every 15 seconds in demo mode; the matcher checks open orders every second.
 
 ```bash
 # Stop the app and database; keep account data in the named volume.
@@ -103,6 +105,7 @@ Bodies are JSON; errors use RFC 9457 problem details. All values are USD. Cash u
 | GET | `/api/accounts/{id}/trades` | Fills, newest first |
 | GET | `/api/quotes`, `/api/quotes/{symbol}` | Cached quotes and timestamps |
 | GET | `/api/quotes/status` | Feed mode |
+| GET | `/api/quotes/history` | Up to 240 observed quotes per symbol |
 | GET | `/api/leaderboard` | Top 20 by return percentage |
 | GET | `/actuator/health` | Health check |
 
@@ -118,7 +121,7 @@ STOMP endpoint: `/ws`. Subscribe to `/topic/quotes` and `/topic/accounts/{id}`. 
 
 The original four-stage roadmap is implemented: core REST domain, scheduled limit execution and price feeds, real-time React dashboard, and packaging/CI/idempotency. Two design choices differ from the initial sketch: a durable database book replaces the in-memory book, and the existing pessimistic account lock is retained instead of adding optimistic locking.
 
-Intentionally outside this demo: authentication, partial fills, shorting, order reservations, exchange calendars, corporate actions, historical chart storage, and distributed broker deployment. The leaderboard scans accounts and order lists are unpaginated; this implementation targets a small local practice environment.
+Intentionally outside this demo: authentication, partial fills, shorting, order reservations, exchange calendars, corporate actions, persistent historical chart storage, and distributed broker deployment. The leaderboard scans accounts and order lists are unpaginated; this implementation targets a small local practice environment.
 
 ## License
 
