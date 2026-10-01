@@ -9,6 +9,22 @@ import org.junit.jupiter.api.Test;
 
 class QuoteCacheTest {
     private QuoteCache cache(String mode) { return new QuoteCache(new PaperTraderProperties(new BigDecimal("1000"), Map.of("AAPL",new BigDecimal("100"))),mode); }
+    @Test void historyIsBoundedOrderedAndCannotBeMutated() {
+        var cache = cache("finnhub");
+        assertThat(cache.history().get("AAPL")).isEmpty();
+        var start = Instant.now().minusSeconds(400);
+        for (int i = 0; i < 300; i++) cache.update(new Quote("AAPL", new BigDecimal("100"), start.plusSeconds(i)));
+        var samples = cache.history().get("AAPL");
+        assertThat(samples).hasSize(240);
+        assertThat(samples.getFirst().asOf()).isEqualTo(start.plusSeconds(60));
+        cache.update(new Quote("AAPL", new BigDecimal("99"), start));
+        assertThat(cache.history().get("AAPL")).isEqualTo(samples);
+        cache.update(new Quote("AAPL", new BigDecimal("101"), start.plusSeconds(299)));
+        assertThat(cache.history().get("AAPL")).hasSize(240);
+        assertThat(cache.history().get("AAPL").getLast().price()).isEqualByComparingTo("101");
+        assertThatThrownBy(() -> samples.clear()).isInstanceOf(UnsupportedOperationException.class);
+    }
+
     @Test void liveModeNeverTradesAtSeedOrStalePrices() {
         var cache=cache("finnhub");
         assertThatThrownBy(()->cache.requireTradable(cache.require("AAPL"))).isInstanceOf(OrderRejectedException.class);

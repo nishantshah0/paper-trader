@@ -25,6 +25,9 @@ class QuoteController {
         return quotes.all();
     }
 
+    @GetMapping("/history")
+    java.util.Map<String, List<Quote>> history() { return quotes.history(); }
+
     @GetMapping("/{symbol}")
     Quote one(@PathVariable String symbol) {
         return quotes.require(symbol.toUpperCase(Locale.ROOT));

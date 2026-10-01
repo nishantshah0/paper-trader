@@ -1,0 +1,1253 @@
+.home {
+  --broker-blue: #356cf5;
+  --broker-navy: #101318;
+  --broker-muted: #a0acc0;
+  --broker-border: #2b3443;
+  --broker-surface: #171c25;
+  color-scheme: dark;
+  background: #101318;
+  color: #dce3ef;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.home a:focus-visible,
+.home button:focus-visible,
+.home summary:focus-visible {
+  outline: 2px solid #739bff;
+  outline-offset: 4px;
+}
+.home a:hover {
+  color: #a3bfff;
+}
+.home-skip {
+  position: absolute;
+  left: 16px;
+  top: -80px;
+  z-index: 40;
+  background: #356cf5;
+  color: #fff;
+  padding: 12px 18px;
+}
+.home-skip:focus {
+  top: 10px;
+}
+.broker-utility {
+  background: #0c0f14;
+  color: #8390a5;
+  font-size: 11px;
+}
+.broker-utility > div {
+  max-width: 1240px;
+  padding: 8px 30px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+.broker-utility > div > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+}
+.broker-utility i {
+  width: 1px;
+  height: 11px;
+  background: #303846;
+}
+.home-nav {
+  max-width: 1240px;
+  margin: auto;
+  padding: 0 30px;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  background: #101318;
+  position: relative;
+  z-index: 5;
+}
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #edf1f8;
+  white-space: nowrap;
+}
+.home-brand svg {
+  color: #8aadff;
+}
+.home-brand strong {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+}
+.home-links {
+  display: flex;
+  align-items: center;
+  gap: 27px;
+  margin-left: auto;
+}
+.home-links a {
+  font-size: 13px;
+  color: #b1bdd0;
+  padding: 28px 0;
+}
+.nav-launch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #3e608f;
+  color: #8aadff;
+  padding: 10px 15px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nav-launch:hover {
+  background: #1d2636;
+}
+.home-menu {
+  display: none;
+}
+.broker-hero {
+  background: #12161d;
+  border-top: 1px solid #2b3443;
+  border-bottom: 1px solid #2b3443;
+}
+.broker-hero-inner {
+  max-width: 1240px;
+  margin: auto;
+  padding: 54px 30px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1.08fr;
+  gap: 48px;
+  align-items: center;
+}
+.home-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #91a8ce;
+  letter-spacing: 1px;
+}
+.home h1 {
+  font-size: clamp(36px, 3.4vw, 48px);
+  line-height: 1.18;
+  letter-spacing: -1.6px;
+  font-weight: 600;
+  color: #f0f3f8;
+  margin: 16px 0 20px;
+}
+.broker-introduction > p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: #a0acc0;
+  max-width: 475px;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 29px;
+  flex-wrap: wrap;
+}
+.home-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 17px;
+  background: #356cf5;
+  border: 1px solid #3e608f;
+  color: #fff;
+  border-radius: 3px;
+  padding: 12px 17px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+.home .home-cta:hover {
+  background: #4a7cfa;
+  color: #fff;
+}
+.home-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2b3443;
+  color: #bacdf1;
+  background: #101318;
+  padding: 12px 16px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.home-secondary:hover {
+  border-color: #3e608f;
+}
+.hero-fine {
+  font-size: 11px;
+  color: #8491a6;
+  margin-top: 16px;
+}
+.broker-product {
+  min-width: 0;
+}
+.product-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #b9c7dc;
+  margin-bottom: 10px;
+}
+.product-label > span:first-child {
+  font-weight: 600;
+}
+.product-label > span:last-child {
+  font-size: 10px;
+  color: #8291a8;
+}
+.terminal-preview {
+  display: block;
+  border: 1px solid #2b3443;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #10141b;
+  box-shadow: 0 10px 23px #00000030;
+}
+.terminal-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: cover;
+  object-position: top;
+}
+.preview-caption {
+  font-size: 9px;
+  color: #8592a7;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.broker-specifications {
+  max-width: 1180px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 24px 0;
+  border-bottom: 1px solid #2b3443;
+}
+.broker-specifications > div {
+  padding: 0 26px;
+  border-right: 1px solid #2b3443;
+}
+.broker-specifications > div:first-child {
+  padding-left: 0;
+}
+.broker-specifications > div:last-child {
+  border: 0;
+  padding-right: 0;
+}
+.broker-specifications span {
+  display: block;
+  font-size: 11px;
+  color: #8997ad;
+  margin-bottom: 5px;
+}
+.broker-specifications strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d9e3f3;
+}
+.broker-section {
+  max-width: 1180px;
+  margin: auto;
+  padding: 64px 0;
+  scroll-margin-top: 25px;
+}
+.home h2 {
+  font-size: 28px;
+  line-height: 1.3;
+  letter-spacing: -0.7px;
+  font-weight: 600;
+  color: #e9edf5;
+}
+.home h3 {
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0 0 12px;
+  color: #dae3f1;
+}
+.market-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 52px;
+}
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.section-description {
+  font-size: 13px;
+  color: #99a8bf;
+  line-height: 1.8;
+  margin-top: 9px;
+  margin-bottom: 24px;
+}
+.market-feed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9faec4;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.market-feed i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #40b893;
+}
+.market-feed.offline i {
+  background: #c49a58;
+}
+.broker-market-table {
+  border-top: 1px solid #2b3443;
+  border-bottom: 1px solid #2b3443;
+  overflow: auto;
+}
+.broker-market-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.broker-market-table th {
+  background: #181e28;
+  color: #92a0b6;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 11px 13px;
+  text-align: right;
+  border-bottom: 1px solid #2b3443;
+}
+.broker-market-table th:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+.broker-market-table td {
+  padding: 13px;
+  font-size: 12px;
+  text-align: right;
+  border-bottom: 1px solid #2b3443;
+  color: #c5d0e1;
+  font-family: Inter, Arial, sans-serif;
+  line-height: 1.5;
+}
+.broker-market-table td:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+.broker-market-table tr:last-child td {
+  border-bottom: 0;
+}
+.home-quote {
+  display: block;
+  color: #cfdef8;
+}
+.home-quote b {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+}
+.home-quote small {
+  font-size: 10px;
+  font-family: Inter, Arial, sans-serif;
+  color: #8f9db3;
+  display: block;
+  margin-top: 2px;
+}
+.broker-market-table .market-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 12px;
+  color: #dae3f1;
+}
+.broker-market-table .quote-time {
+  font-size: 10px;
+  color: #8d9cb2;
+  white-space: nowrap;
+}
+.quote-action {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  color: #93b5ff;
+  font-size: 10px;
+}
+.market-footnote {
+  font-size: 10px;
+  color: #7f8fa6;
+  line-height: 1.7;
+  margin-top: 12px;
+}
+.account-access {
+  border: 1px solid #2b3443;
+  background: #191f2a;
+  align-self: start;
+  padding: 27px 25px;
+  border-radius: 3px;
+  margin-top: 4px;
+}
+.account-access > svg {
+  color: #8aa9e4;
+  margin-bottom: 15px;
+}
+.account-access h3 {
+  font-size: 20px;
+}
+.account-access > p {
+  font-size: 13px;
+  color: #a0afc5;
+  line-height: 1.8;
+}
+.account-access ul {
+  list-style: none;
+  padding: 0;
+  margin: 23px 0;
+  color: #a4b3c9;
+  font-size: 12px;
+  line-height: 2.3;
+}
+.account-access li:before {
+  content: "✓";
+  color: #5fbaa0;
+  margin-right: 10px;
+  font-size: 11px;
+}
+.account-access .home-cta {
+  width: 100%;
+  font-size: 12px;
+  gap: 10px;
+  padding: 12px 10px;
+}
+.returning-account {
+  border-top: 1px solid #2b3443;
+  margin-top: 25px;
+  padding-top: 19px;
+  font-size: 11px;
+  color: #8e9db2;
+}
+.returning-account > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #99baff;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.broker-platform {
+  background: #141920;
+  border-top: 1px solid #2b3443;
+  border-bottom: 1px solid #2b3443;
+}
+.section-heading-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 30px;
+}
+.section-heading-row h2 {
+  margin-top: 10px;
+}
+.home-text-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #94b4f4;
+  font-size: 12px;
+  white-space: nowrap;
+  padding-bottom: 5px;
+}
+.broker-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 42px;
+  margin-top: 39px;
+}
+.broker-features article {
+  border-top: 1px solid #2b3443;
+  padding-top: 24px;
+}
+.broker-features article > svg {
+  color: #97b4e8;
+  margin-bottom: 16px;
+}
+.broker-features p {
+  font-size: 13px;
+  color: #9eacc2;
+  line-height: 1.9;
+}
+.broker-how {
+  border-bottom: 1px solid #2b3443;
+}
+.broker-how ol {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
+  padding: 0;
+  margin: 36px 0 0;
+}
+.broker-how li {
+  display: flex;
+  align-items: start;
+  gap: 15px;
+}
+.broker-how li > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a4c0f2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  background: #1d2b44;
+  border: 1px solid #2b3443;
+  border-radius: 50%;
+}
+.broker-how h3 {
+  font-size: 15px;
+  margin-top: 3px;
+  margin-bottom: 8px;
+}
+.broker-how p {
+  font-size: 12px;
+  color: #9caac0;
+  line-height: 1.9;
+}
+.broker-faq {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 80px;
+}
+.broker-faq > div:first-child h2 {
+  margin: 11px 0 17px;
+  font-size: 26px;
+}
+.broker-faq > div:first-child > p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #9aabc1;
+  max-width: 260px;
+}
+.faq-list details {
+  border-top: 1px solid #2b3443;
+}
+.faq-list details:last-child {
+  border-bottom: 1px solid #2b3443;
+}
+.faq-list summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  list-style: none;
+  cursor: pointer;
+  padding: 19px 0;
+  color: #c4cfe0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.faq-list summary::-webkit-details-marker {
+  display: none;
+}
+.faq-plus {
+  font-size: 19px;
+  font-weight: 400;
+  color: #9daeca;
+}
+.faq-list details[open] .faq-plus {
+  transform: rotate(45deg);
+}
+.faq-list details > p {
+  font-size: 12px;
+  color: #9daec6;
+  line-height: 1.9;
+  padding: 0 25px 20px 0;
+}
+.broker-final {
+  max-width: 1180px;
+  margin: 0 auto 64px;
+  padding: 29px 33px;
+  background: #191f2a;
+  border: 1px solid #2b3443;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  border-radius: 3px;
+}
+.broker-final h2 {
+  font-size: 22px;
+  letter-spacing: -0.4px;
+}
+.broker-final p {
+  font-size: 12px;
+  color: #9dacc1;
+  margin-top: 7px;
+}
+.home-footer {
+  background: #0c0f14;
+  color: #9dabc0;
+  padding: 37px max(30px, calc((100vw - 1180px) / 2)) 27px;
+}
+.footer-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: start;
+}
+.home-footer .home-brand,
+.home-footer .home-brand svg {
+  color: #e0e7f3;
+}
+.home-footer .home-brand strong {
+  font-size: 18px;
+}
+.footer-main > div > p {
+  font-size: 11px;
+  color: #8d9db5;
+  margin-top: 11px;
+}
+.home-footer nav {
+  display: flex;
+  gap: 24px;
+  padding-top: 7px;
+}
+.home-footer nav a {
+  font-size: 11px;
+  color: #aabbd3;
+}
+.home .home-footer a:hover {
+  color: #fff;
+}
+.footer-disclosure {
+  border-top: 1px solid #2b3443;
+  margin-top: 28px;
+  padding-top: 21px;
+  color: #8495ad;
+  font-size: 10px;
+  line-height: 1.9;
+}
+.footer-disclosure p {
+  max-width: 1000px;
+}
+.footer-disclosure p + p {
+  margin-top: 8px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 1250px) {
+  .broker-specifications,
+  .broker-section,
+  .broker-final {
+    margin-left: 30px;
+    margin-right: 30px;
+  }
+  .home-nav {
+    gap: 25px;
+  }
+  .home-links {
+    gap: 23px;
+  }
+  .broker-hero-inner {
+    gap: 35px;
+  }
+  .home h1 {
+    font-size: 39px;
+    letter-spacing: -1.2px;
+  }
+  .broker-introduction > p {
+    font-size: 14px;
+  }
+  .home-cta,
+  .home-secondary {
+    font-size: 12px;
+    padding: 11px 13px;
+  }
+  .hero-actions {
+    gap: 10px;
+  }
+  .broker-specifications > div {
+    padding: 0 18px;
+  }
+  .broker-specifications strong {
+    font-size: 12px;
+  }
+  .market-overview {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 35px;
+  }
+  .account-access {
+    padding: 24px 21px;
+  }
+  .broker-section {
+    padding-top: 53px;
+    padding-bottom: 53px;
+  }
+}
+@media (max-width: 950px) {
+  .home-brand strong {
+    font-size: 19px;
+  }
+  .home-nav {
+    gap: 22px;
+  }
+  .home-links {
+    gap: 17px;
+  }
+  .home-links a {
+    font-size: 11px;
+  }
+  .nav-launch {
+    padding: 9px 12px;
+    font-size: 11px;
+    gap: 9px;
+  }
+  .broker-hero-inner {
+    padding-top: 45px;
+    padding-bottom: 40px;
+    gap: 28px;
+  }
+  .home h1 {
+    font-size: 34px;
+    letter-spacing: -0.8px;
+  }
+  .broker-introduction > p {
+    font-size: 13px;
+  }
+  .hero-actions {
+    align-items: stretch;
+    gap: 10px;
+  }
+  .home-cta,
+  .home-secondary {
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+  .hero-fine {
+    font-size: 9px;
+  }
+  .broker-specifications strong {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .broker-specifications span {
+    font-size: 10px;
+  }
+  .market-overview {
+    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+  .home h2 {
+    font-size: 25px;
+  }
+  .account-access {
+    padding: 22px 18px;
+  }
+  .account-access h3 {
+    font-size: 18px;
+  }
+  .account-access > p,
+  .account-access ul {
+    font-size: 11px;
+  }
+  .account-access .home-cta {
+    font-size: 10px;
+    gap: 6px;
+  }
+  .broker-features {
+    gap: 26px;
+  }
+  .broker-features p {
+    font-size: 12px;
+  }
+  .broker-features h3 {
+    font-size: 16px;
+  }
+  .broker-how ol {
+    gap: 24px;
+  }
+  .broker-how li {
+    gap: 10px;
+  }
+  .broker-how p {
+    font-size: 11px;
+  }
+  .broker-faq {
+    gap: 40px;
+  }
+  .broker-faq > div:first-child h2 {
+    font-size: 24px;
+  }
+  .broker-market-table .quote-time {
+    display: none;
+  }
+  .broker-market-table th:nth-child(3) {
+    display: none;
+  }
+  .footer-main nav {
+    gap: 18px;
+  }
+}
+@media (max-width: 700px) {
+  .broker-utility > div {
+    padding: 7px 20px;
+    font-size: 9px;
+  }
+  .broker-utility > div > span:last-child {
+    font-size: 8px;
+    gap: 7px;
+  }
+  .broker-utility i {
+    height: 9px;
+  }
+  .home-nav {
+    height: 70px;
+    padding: 0 20px;
+    gap: 14px;
+  }
+  .home-brand {
+    gap: 6px;
+  }
+  .home-brand strong {
+    font-size: 19px;
+  }
+  .home-brand svg {
+    width: 24px;
+  }
+  .nav-launch {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 8px 9px;
+    gap: 7px;
+  }
+  .nav-launch svg {
+    width: 12px;
+  }
+  .home-menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b4c8ed;
+    font-size: 18px;
+    padding: 0;
+    width: 25px;
+    height: 25px;
+  }
+  .home-links {
+    display: none;
+    position: absolute;
+    top: 63px;
+    left: 15px;
+    right: 15px;
+    background: #101318;
+    border: 1px solid #2b3443;
+    box-shadow: 0 7px 20px #00000030;
+    z-index: 10;
+    padding: 8px;
+    gap: 0;
+  }
+  .home-links.open {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .home-links a {
+    padding: 13px;
+    font-size: 13px;
+  }
+  .broker-hero-inner {
+    grid-template-columns: 1fr;
+    padding: 35px 24px 30px;
+    gap: 35px;
+  }
+  .home-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.7px;
+  }
+  .home h1 {
+    font-size: 35px;
+    line-height: 1.2;
+    letter-spacing: -0.9px;
+    margin: 12px 0 17px;
+  }
+  .broker-introduction > p {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .hero-actions {
+    margin-top: 24px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .home-cta,
+  .home-secondary {
+    font-size: 11px;
+    padding: 12px 13px;
+    gap: 9px;
+  }
+  .hero-fine {
+    font-size: 10px;
+    margin-top: 14px;
+  }
+  .product-label {
+    font-size: 10px;
+  }
+  .product-label > span:last-child {
+    font-size: 9px;
+  }
+  .preview-caption {
+    font-size: 8px;
+  }
+  .broker-specifications,
+  .broker-section,
+  .broker-final {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+  .broker-specifications {
+    grid-template-columns: 1fr 1fr;
+    gap: 21px 0;
+    padding: 23px 0;
+  }
+  .broker-specifications > div {
+    padding: 0 0 0 18px;
+  }
+  .broker-specifications > div:nth-child(odd) {
+    padding-left: 0;
+  }
+  .broker-specifications > div:nth-child(even) {
+    border: 0;
+  }
+  .broker-specifications strong {
+    font-size: 11px;
+  }
+  .broker-specifications span {
+    font-size: 9px;
+  }
+  .broker-section {
+    padding-top: 39px;
+    padding-bottom: 39px;
+  }
+  .market-overview {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .section-title {
+    gap: 10px;
+  }
+  .home h2 {
+    font-size: 25px;
+    letter-spacing: -0.5px;
+  }
+  .market-feed {
+    font-size: 8px;
+  }
+  .section-description {
+    font-size: 12px;
+    margin-top: 9px;
+    margin-bottom: 20px;
+  }
+  .broker-market-table th {
+    font-size: 9px;
+    padding: 10px;
+  }
+  .broker-market-table td {
+    padding: 12px 10px;
+  }
+  .home-quote b {
+    font-size: 12px;
+  }
+  .home-quote small {
+    font-size: 9px;
+  }
+  .broker-market-table .market-price {
+    font-size: 11px;
+  }
+  .quote-action {
+    font-size: 10px;
+    gap: 3px;
+  }
+  .market-footnote {
+    font-size: 9px;
+  }
+  .account-access {
+    padding: 23px;
+    margin-top: 0;
+  }
+  .account-access h3 {
+    font-size: 20px;
+  }
+  .account-access > p,
+  .account-access ul {
+    font-size: 12px;
+  }
+  .account-access ul {
+    margin: 18px 0;
+  }
+  .account-access .home-cta {
+    font-size: 12px;
+  }
+  .returning-account {
+    margin-top: 20px;
+    padding-top: 17px;
+  }
+  .section-heading-row {
+    display: block;
+  }
+  .section-heading-row h2 {
+    font-size: 26px;
+    margin-top: 10px;
+    max-width: 340px;
+  }
+  .home-text-link {
+    margin-top: 19px;
+    font-size: 12px;
+  }
+  .broker-features {
+    grid-template-columns: 1fr;
+    gap: 27px;
+    margin-top: 30px;
+  }
+  .broker-features article {
+    padding-top: 22px;
+  }
+  .broker-features article > svg {
+    margin-bottom: 12px;
+  }
+  .broker-features h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  .broker-features p {
+    font-size: 13px;
+  }
+  .broker-how ol {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 28px;
+  }
+  .broker-how li {
+    gap: 15px;
+  }
+  .broker-how h3 {
+    font-size: 16px;
+  }
+  .broker-how p {
+    font-size: 12px;
+  }
+  .broker-faq {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .broker-faq > div:first-child h2 {
+    font-size: 26px;
+    max-width: 290px;
+  }
+  .broker-faq > div:first-child > p {
+    max-width: none;
+    font-size: 12px;
+  }
+  .faq-list summary {
+    font-size: 12px;
+    padding: 19px 0;
+    line-height: 1.6;
+  }
+  .faq-list details > p {
+    font-size: 12px;
+    padding-right: 0;
+  }
+  .broker-final {
+    margin-bottom: 37px;
+    display: block;
+    padding: 23px;
+  }
+  .broker-final h2 {
+    font-size: 21px;
+  }
+  .broker-final p {
+    font-size: 12px;
+    line-height: 1.8;
+    margin-top: 9px;
+  }
+  .broker-final .home-cta {
+    margin-top: 20px;
+    font-size: 12px;
+  }
+  .home-footer {
+    padding: 30px 24px 24px;
+  }
+  .footer-main {
+    display: block;
+  }
+  .home-footer nav {
+    margin-top: 23px;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+  .home-footer nav a {
+    font-size: 11px;
+  }
+  .footer-disclosure {
+    font-size: 9px;
+    margin-top: 24px;
+  }
+  .footer-disclosure p + p {
+    margin-top: 10px;
+  }
+}
+@media (max-width: 370px) {
+  .home-nav {
+    padding: 0 14px;
+    gap: 9px;
+  }
+  .home-brand strong {
+    font-size: 17px;
+  }
+  .home-brand svg {
+    width: 21px;
+  }
+  .nav-launch {
+    font-size: 9px;
+    padding: 8px;
+  }
+  .broker-utility > div {
+    padding: 7px 14px;
+  }
+  .broker-utility > div > span:last-child {
+    font-size: 7px;
+  }
+  .home h1 {
+    font-size: 31px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .home-cta,
+  .home-secondary {
+    font-size: 12px;
+  }
+  .broker-hero-inner {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .broker-specifications,
+  .broker-section,
+  .broker-final {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+}
+
+/* Quote strip shares the terminal's compact market-data treatment. */
+.home-market-strip {
+  background: #161b24;
+  border-top: 1px solid #252e3d;
+  border-bottom: 1px solid #252e3d;
+}
+.market-strip-inner {
+  max-width: 1240px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  overflow: auto;
+  scrollbar-width: none;
+  padding: 0 30px;
+}
+.strip-feed {
+  color: #8598b6;
+  font-size: 9px;
+  white-space: nowrap;
+  padding-right: 25px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.strip-feed i {
+  height: 5px;
+  width: 5px;
+  background: #40b893;
+  border-radius: 50%;
+}
+.strip-quote {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 12px 22px;
+  border-left: 1px solid #2a3445;
+  white-space: nowrap;
+  font: 10px var(--mono);
+  color: #c5d5ef;
+  flex: 1;
+}
+.strip-quote b {
+  font-weight: 500;
+  color: #9aabc4;
+}
+.strip-quote:hover {
+  background: #202938;
+}
+.home .home-cta {
+  color: #fff;
+}
+.home .home-cta:hover {
+  color: #fff;
+}
+.home-secondary:hover {
+  background: #202b3e;
+}
+.broker-market-table tbody tr:hover {
+  background: #171f2c;
+}
+.home-nav {
+  height: 74px;
+}
+.broker-utility {
+  border-bottom: 1px solid #212b39;
+}
+@media (max-width: 700px) {
+  .home-nav {
+    height: 66px;
+  }
+  .market-strip-inner {
+    padding: 0 20px;
+  }
+  .strip-feed {
+    font-size: 8px;
+    padding-right: 16px;
+  }
+  .strip-quote {
+    font-size: 9px;
+    padding: 10px 15px;
+    gap: 11px;
+  }
+}
