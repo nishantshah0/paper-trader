@@ -21,6 +21,8 @@ import tools.jackson.databind.ObjectMapper;
 // a small balance and round prices keep the arithmetic in the assertions obvious
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(properties = {
+        "papertrader.engine.enabled=false",
+        "papertrader.feed.mode=static",
         "papertrader.starting-cash=1000.00",
         "papertrader.seed-quotes.AAPL=100.00",
         "papertrader.seed-quotes.MSFT=50.00"

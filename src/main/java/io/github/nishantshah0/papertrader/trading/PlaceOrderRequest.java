@@ -12,7 +12,7 @@ public record PlaceOrderRequest(
         @NotNull OrderSide side,
         OrderType type,
         @NotNull @Positive @Max(1_000_000) Integer quantity,
-        @Positive BigDecimal limitPrice) {
+        @Positive @jakarta.validation.constraints.Digits(integer = 10, fraction = 4) BigDecimal limitPrice) {
 
     public OrderType typeOrMarket() {
         return type == null ? OrderType.MARKET : type;

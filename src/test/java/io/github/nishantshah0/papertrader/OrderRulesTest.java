@@ -30,7 +30,7 @@ class OrderRulesTest extends ApiTestSupport {
         assertThat(post(orders(account), "{\"symbol\":\"ZZZZ\",\"side\":\"BUY\",\"quantity\":1}"))
                 .hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(post(orders(account),
-                "{\"symbol\":\"AAPL\",\"side\":\"BUY\",\"type\":\"LIMIT\",\"quantity\":1,\"limitPrice\":90}"))
+                "{\"symbol\":\"AAPL\",\"side\":\"BUY\",\"type\":\"LIMIT\",\"quantity\":1,\"limitPrice\":9000}"))
                 .hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
 
         assertThat(readList(get(orders(account)), ORDERS)).isEmpty();

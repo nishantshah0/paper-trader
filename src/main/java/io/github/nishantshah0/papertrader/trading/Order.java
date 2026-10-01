@@ -19,6 +19,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "idempotency_key", length = 128, updatable = false)
+    private String idempotencyKey;
+
     @Column(name = "account_id", nullable = false, updatable = false)
     private Long accountId;
 
@@ -68,6 +71,19 @@ public class Order {
         return new Order(accountId, symbol, side, OrderType.MARKET, quantity, null);
     }
 
+    public static Order limit(Long accountId, String symbol, OrderSide side, int quantity, BigDecimal price) {
+        return new Order(accountId, symbol, side, OrderType.LIMIT, quantity, price);
+    }
+
+    public boolean crosses(BigDecimal price) {
+        return type == OrderType.MARKET || (side == OrderSide.BUY
+                ? price.compareTo(limitPrice) <= 0 : price.compareTo(limitPrice) >= 0);
+    }
+
+    public void reject() {
+        transition(OrderStatus.REJECTED);
+    }
+
     public boolean isOpen() {
         return status == OrderStatus.OPEN;
     }
@@ -86,6 +102,15 @@ public class Order {
         }
         status = next;
         updatedAt = Instant.now();
+    }
+
+    public void setIdempotencyKey(String key) { this.idempotencyKey = key; }
+
+    public boolean sameRequest(PlaceOrderRequest request) {
+        return symbol.equalsIgnoreCase(request.symbol()) && side == request.side()
+                && type == request.typeOrMarket() && quantity == request.quantity()
+                && (limitPrice == null ? request.limitPrice() == null
+                    : request.limitPrice() != null && limitPrice.compareTo(request.limitPrice()) == 0);
     }
 
     public Long getId() {
