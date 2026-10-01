@@ -1,111 +1,124 @@
 # paper-trader
 
-A paper-trading simulator: a Spring Boot service with a hand-written limit-order matching engine, a live market-data feed, WebSocket push, and a React dashboard.
+A local paper-trading desk built with Java 21, Spring Boot, Postgres, and React. Place market and limit orders, watch fills arrive in two browser tabs, and track realized and unrealized P&L.
 
-> **No real money.** Every account starts with synthetic cash. The service never connects to a brokerage, never places real orders, and cannot move funds. The prices are real; everything else is simulated.
+**Simulation only.** No brokerage connection, no real funds, and no real orders. The default feed uses simulated prices. Optional Finnhub mode uses provider quotes and rejects execution against stale prices.
 
-## Status
+![Trading dashboard](docs/dashboard.png)
 
-Week 1 done: accounts, portfolio, and market orders over REST, backed by Postgres and covered by Testcontainers tests. Quotes are placeholder prices from `application.yml` until the live feed lands in week 2, so for now every fill happens at a fixed price.
+## Run the complete app
 
-## What it will do
+Install Docker Desktop, start its engine, then run:
 
-- Live quotes for a small set of symbols, polled server-side from a free market-data API and cached per symbol. The browser never calls the API directly.
-- Market orders fill immediately at the cached price.
-- Limit orders rest in an in-memory order book per symbol and fill when the cached price crosses them.
-- Every fill writes a trade row and updates a position row. Cash and positions live in Postgres; the order book lives in memory and is rebuilt from open orders on startup.
-- Realized and unrealized profit and loss per position, and a leaderboard by account value.
-- Quotes, fills, and portfolio updates pushed to connected browsers over STOMP WebSockets.
-
-## Architecture
-
+```bash
+git clone https://github.com/nishantshah0/paper-trader.git
+cd paper-trader
+docker compose --profile app up --build -d --wait
 ```
-market-data API
-      |  polled on a schedule, cached per symbol
-      v
- price feed --quote events--> matching engine --fills--> Postgres
-                              in-memory order book       accounts, orders,
-                              per symbol                 trades, positions
-                                    |
-                                    |  quotes, fills, portfolio updates
-                                    v
-                             STOMP WebSocket --> React dashboard
+
+Open **http://localhost:8080**. Create a lowercase account name to receive $100,000 in synthetic cash. Keep the account ID to reopen it in another browser. The first image build downloads Java and Node dependencies and can take several minutes.
+
+The dashboard includes a watchlist, session price chart, order ticket, positions, open orders and cancellation, trade history, and a leaderboard ranked by percentage return. Prices update every 15 seconds in demo mode; the matcher checks open orders every second.
+
+```bash
+# Stop the app and database; keep account data in the named volume.
+docker compose --profile app down
 ```
+
+This is a **shared local demo without authentication**. Anyone with access can view and trade on any account ID. Compose binds both ports to loopback. Add authentication and authorization before exposing it publicly.
+
+## Order behavior
+
+- Market orders execute immediately at the cached quote.
+- Buy limits fill when the quote is at or below the limit; sell limits fill at or above it. A marketable limit executes immediately.
+- Fills are whole-order, whole-share, long-only, with no slippage, commissions, or liquidity modeling. This is a quote-triggered simulator, not an exchange matching buyers against sellers.
+- Open orders **do not reserve cash or shares**. Placement checks resources, then execution checks again. A resting order that becomes unfunded is marked `REJECTED`, without a trade or balance change.
+- The account row lock serializes placement, matching, and cancellation. Cash, positions, orders, and trades commit together. A unique constraint allows only one fill per order.
+- An optional `Idempotency-Key` header makes retries safe. Same account + key + payload returns the original order; a different payload returns 409. The dashboard retains its key when a request fails so a retry cannot duplicate an uncertain fill.
+- Postgres is the durable order book. The matcher reloads open orders in creation/ID order each tick, so restart recovery needs no separate cache rebuild.
+
+See [architecture and tradeoffs](docs/architecture.md).
+
+## Optional provider quotes
+
+Copy `.env.example` to `.env` and set:
+
+```dotenv
+FEED_MODE=finnhub
+FINNHUB_API_KEY=your_key
+FEED_INTERVAL_MS=15000
+```
+
+Recreate the app with the same Compose command. The key stays on the server and is not included in browser code or logs. The quote adapter calls [Finnhub's quote endpoint](https://finnhub.io/docs/api/quote). Twelve symbols at the default interval use up to 48 requests per minute; choose an interval appropriate for your provider plan.
+
+Live mode never executes at seed prices. A quote must have a provider timestamp within the last 120 seconds. Provider errors retain the previous quote; stale quotes remain visible but cannot execute orders. This deliberately means trading can be unavailable outside market hours. `FEED_MODE=static` keeps seed prices unchanged for deterministic manual experiments.
+
+Live provider access requires your own key; automated tests use local quotes and do not contact Finnhub.
+
+## Development
+
+Requirements: JDK 21, Docker, Node 22, and npm. Maven is included through the wrapper.
+
+```bash
+# Backend; Spring Boot starts the Compose database automatically.
+./mvnw spring-boot:run
+
+# In another terminal; Vite proxies REST and WebSocket requests to port 8080.
+cd frontend
+npm ci
+npm run dev
+```
+
+On Windows use `.\mvnw.cmd` instead of `./mvnw`. Open Vite's displayed URL for frontend development. Stop a packaged app container before starting the backend locally so both do not claim port 8080.
+
+## Verification
+
+```bash
+./mvnw verify                       # Unit + real Postgres integration tests
+cd frontend
+npm ci
+npm run format:check
+npm run build
+npx playwright install chromium
+npm test                           # Requires the complete app on localhost:8080
+```
+
+Set `E2E_BASE_URL` to test another local instance. Browser tests create their own synthetic accounts; use a disposable database when a clean leaderboard matters.
+
+Tests cover market execution, limit crossings, scheduled fills, cancellation, rejected orders, concurrent spending, duplicate retries, fill/cancel races, stale quotes, schema migrations, P&L, and two-tab WebSocket delivery. Browser checks include desktop and mobile layouts. GitHub Actions runs the backend suite, builds the complete Docker app, and runs the browser suite.
 
 ## API
 
-Bodies are JSON. Errors come back as RFC 9457 problem details with a `detail` message.
+Bodies are JSON; errors use RFC 9457 problem details. All values are USD. Cash uses decimal cents; prices and average costs use four decimal places.
 
-| Method | Path | What it does |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/accounts` | Create an account for a username, funded with the starting cash |
-| `GET` | `/api/accounts/{id}` | Cash and starting cash |
-| `GET` | `/api/accounts/{id}/portfolio` | Positions marked at the latest quote, with realized and unrealized P&L |
-| `POST` | `/api/accounts/{id}/orders` | Place an order. Market orders fill immediately at the cached quote |
-| `GET` | `/api/accounts/{id}/orders?status=OPEN` | List orders, optionally filtered by status |
-| `GET` | `/api/accounts/{id}/orders/{orderId}` | One order |
-| `DELETE` | `/api/accounts/{id}/orders/{orderId}` | Cancel an open order |
-| `GET` | `/api/accounts/{id}/trades` | Fills, newest first |
-| `GET` | `/api/quotes`, `/api/quotes/{symbol}` | The quote cache |
+| POST | `/api/accounts` | Create a practice account |
+| GET | `/api/accounts/{id}` | Cash and starting balance |
+| GET | `/api/accounts/{id}/portfolio` | Positions, value, and P&L |
+| POST | `/api/accounts/{id}/orders` | Place a market or limit order; optional Idempotency-Key |
+| GET | `/api/accounts/{id}/orders?status=OPEN` | List orders; status is optional |
+| GET | `/api/accounts/{id}/orders/{orderId}` | One order |
+| DELETE | `/api/accounts/{id}/orders/{orderId}` | Cancel an open order |
+| GET | `/api/accounts/{id}/trades` | Fills, newest first |
+| GET | `/api/quotes`, `/api/quotes/{symbol}` | Cached quotes and timestamps |
+| GET | `/api/quotes/status` | Feed mode |
+| GET | `/api/leaderboard` | Top 20 by return percentage |
+| GET | `/actuator/health` | Health check |
 
-A buy that costs more than the account holds in cash, or a sell of more shares than it owns, is rejected with a 422 and leaves no order behind. The whole fill runs in one transaction under a row lock on the account, so cash, position, order, and trade change together or not at all.
+Example limit-order body:
 
-## Try it
-
-With the service running (see below), from Git Bash or any Unix shell:
-
-```bash
-curl -s -X POST localhost:8080/api/accounts -H 'content-type: application/json' -d '{"username":"nishant"}'
-curl -s -X POST localhost:8080/api/accounts/1/orders -H 'content-type: application/json' -d '{"symbol":"AAPL","side":"BUY","quantity":10}'
-curl -s localhost:8080/api/accounts/1/portfolio
+```json
+{"symbol":"AAPL","side":"BUY","type":"LIMIT","quantity":2,"limitPrice":225.50}
 ```
 
-The order comes back `FILLED`, and the portfolio shows the cash debited and a ten-share AAPL position at the fill price.
+STOMP endpoint: `/ws`. Subscribe to `/topic/quotes` and `/topic/accounts/{id}`. Account messages invalidate portfolio/order/trade views after commit. Clients can subscribe but cannot publish broker messages. The dashboard resynchronizes on reconnect and uses a 15-second polling fallback.
 
-## Data model
+## Scope
 
-Five tables, owned by Flyway migrations in `src/main/resources/db/migration`.
+The original four-stage roadmap is implemented: core REST domain, scheduled limit execution and price feeds, real-time React dashboard, and packaging/CI/idempotency. Two design choices differ from the initial sketch: a durable database book replaces the in-memory book, and the existing pessimistic account lock is retained instead of adding optimistic locking.
 
-- `users` and `accounts`: one account per user, holding `cash` and `starting_cash` so the leaderboard can rank by return.
-- `orders`: `MARKET` or `LIMIT`, `BUY` or `SELL`, with a status of `OPEN`, `FILLED`, `CANCELLED`, or `REJECTED`. A check constraint requires a limit price exactly when the type is `LIMIT`. A partial index on open orders backs the order-book rebuild on startup.
-- `trades`: one row per fill, with the executed price and quantity.
-- `positions`: one row per account and symbol, with quantity, average cost, and realized profit and loss. Positions are long-only.
-
-Money and prices are `numeric`, never floating point.
-
-## Stack
-
-| Layer | Choice |
-| --- | --- |
-| Language | Java 21 |
-| Framework | Spring Boot 4, Spring Data JPA, Spring WebSocket (STOMP) |
-| Database | PostgreSQL 17 with Flyway migrations |
-| Tests | JUnit 5, Testcontainers against a real Postgres |
-| Front end | React |
-| Packaging | Docker Compose, GitHub Actions |
-
-## Running it
-
-You need Docker (Docker Desktop or any engine with Compose) and JDK 21. Maven is not required; the wrapper downloads it on first use. On Windows, use `mvnw.cmd` instead of `./mvnw`.
-
-```bash
-./mvnw spring-boot:run
-```
-
-Spring Boot's Docker Compose support starts the Postgres service from `compose.yaml` on its own, then Flyway applies the migrations. The service listens on http://localhost:8080 and reports health at http://localhost:8080/actuator/health.
-
-Tests run against a throwaway Postgres started by Testcontainers, so Docker must be running:
-
-```bash
-./mvnw test
-```
-
-## Roadmap
-
-- [x] **Week 1, core domain.** Docker Compose, Flyway, REST endpoints for accounts, portfolio, and orders. Market orders only. Done when a market order placed over curl changes cash and positions.
-- [ ] **Week 2, the engine.** Limit orders, a per-symbol order book, a scheduled price feed, the matching engine, and P&L. Done when a resting limit order fills on its own when the price crosses it, with a test that proves it.
-- [ ] **Week 3, real-time and front end.** WebSocket push and the React dashboard: portfolio, order ticket, open orders, trade history, price line, leaderboard. Done when two browser tabs see the same fill at the same moment.
-- [ ] **Week 4, hardening and packaging.** Validation and error responses, optimistic locking on balances, idempotency keys on order placement, one-command Docker Compose, CI, and architecture notes. Done when a stranger can clone it and have it running in five minutes.
+Intentionally outside this demo: authentication, partial fills, shorting, order reservations, exchange calendars, corporate actions, historical chart storage, and distributed broker deployment. The leaderboard scans accounts and order lists are unpaginated; this implementation targets a small local practice environment.
 
 ## License
 
