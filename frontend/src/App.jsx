@@ -69,7 +69,9 @@ export default function App() {
   const [search, setSearch] = useState(""),
     [activeTab, setActiveTab] = useState("positions");
   const [timeframe, setTimeframe] = useState("ALL"),
-    [accountModal, setAccountModal] = useState(false);
+    [accountModal, setAccountModal] = useState(
+      new URLSearchParams(location.search).get("setup") === "1",
+    );
   const dialog = useRef(null);
   useEffect(() => {
     if (accountModal) dialog.current?.showModal();
@@ -161,6 +163,13 @@ export default function App() {
   const chooseAccount = (id) => {
     setAccount(String(id));
     setAccountModal(false);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("setup");
+    window.history.replaceState(
+      null,
+      "",
+      nextUrl.pathname + nextUrl.search + nextUrl.hash,
+    );
     try {
       localStorage.setItem("paper-trader.account", String(id));
     } catch {}

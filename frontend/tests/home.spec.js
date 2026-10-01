@@ -5,9 +5,11 @@ test("home page introduces the product and launches the working terminal", async
   request,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Get a feel/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Practice trading/ }),
+  ).toBeVisible();
   await page
-    .getByRole("link", { name: "Start practicing", exact: true })
+    .getByRole("link", { name: "Explore the terminal", exact: true })
     .click();
   await expect(page).toHaveURL(/\/terminal$/);
   await expect(
@@ -21,7 +23,9 @@ test("home page introduces the product and launches the working terminal", async
     .getByRole("link", { name: "Paper Trader home", exact: true })
     .click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: /Get a feel/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Practice trading/ }),
+  ).toBeVisible();
   const trailingSlash = await request.get("/terminal/");
   expect(trailingSlash.status()).toBe(200);
   const missingApi = await request.get("/api/does-not-exist");
@@ -62,7 +66,7 @@ test("home sections, FAQ, and mobile navigation are usable", async ({
     ),
   ).toBe(true);
   await page
-    .getByRole("link", { name: "Launch your terminal", exact: true })
+    .getByRole("link", { name: "Explore the terminal", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Trading terminal", exact: true }),
@@ -72,7 +76,9 @@ test("home sections, FAQ, and mobile navigation are usable", async ({
 test("home layout renders at desktop and mobile widths", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  await expect(page.locator(".home-quote").first()).toContainText("$");
+  await expect(
+    page.locator(".broker-market-table tbody tr").first(),
+  ).toContainText("$");
   await expect(page.locator(".terminal-preview img")).toHaveJSProperty(
     "complete",
     true,
@@ -96,4 +102,25 @@ test("home layout renders at desktop and mobile widths", async ({ page }) => {
     path: "test-results/home-mobile-hero.png",
     fullPage: false,
   });
+});
+
+test("home account-opening flow creates an account and survives refresh", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("link", { name: "Open practice account", exact: true })
+    .first()
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByLabel("New account name").fill("broker_" + Date.now());
+  await page
+    .getByRole("button", { name: "Create account", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(page.getByText(/Account #/)).toBeVisible();
+  await expect(page).toHaveURL(/\/terminal$/);
+  await page.reload();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(page.getByText(/Account #/)).toBeVisible();
 });

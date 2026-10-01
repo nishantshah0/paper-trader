@@ -1,30 +1,14 @@
 import { useEffect, useState } from "react";
 import Icon from "./Icon";
 import { api, money } from "./api";
-const names = { AAPL: "Apple", NVDA: "NVIDIA", MSFT: "Microsoft" };
-const features = [
-  {
-    number: "01",
-    icon: "chart",
-    title: "A desk that means business.",
-    text: "A focused chart, a searchable watchlist, and your order ticket in one workspace. Everything you need to make your next move.",
-    tags: ["Interactive charts", "12 instruments"],
-  },
-  {
-    number: "02",
-    icon: "activity",
-    title: "Your strategy. Your order.",
-    text: "Enter at the current quote or set a limit and wait for your price. Follow working orders and cancel them as your plan changes.",
-    tags: ["Market orders", "Limit orders"],
-  },
-  {
-    number: "03",
-    icon: "wallet",
-    title: "See the whole picture.",
-    text: "Track buying power, positions, and realized and unrealized P&L. Every execution leaves a record you can learn from.",
-    tags: ["Portfolio tracking", "Trade history"],
-  },
-];
+const names = {
+  AAPL: "Apple Inc.",
+  NVDA: "NVIDIA Corporation",
+  MSFT: "Microsoft Corporation",
+  AMZN: "Amazon.com Inc.",
+  GOOGL: "Alphabet Inc.",
+  JPM: "JPMorgan Chase & Co.",
+};
 const faqs = [
   [
     "Am I trading with real money?",
@@ -47,6 +31,7 @@ const faqs = [
     "This is a learning simulator. It uses whole-share, whole-order fills and does not model liquidity, slippage, commissions, shorting, or corporate actions. Simulated results are not a prediction of real-market performance.",
   ],
 ];
+
 export default function Home() {
   const [menu, setMenu] = useState(false),
     [quotes, setQuotes] = useState([]),
@@ -75,27 +60,47 @@ export default function Home() {
     };
   }, []);
   const close = () => setMenu(false);
+  const feedLabel =
+    mode === "finnhub"
+      ? "Provider quotes"
+      : mode === "static"
+        ? "Static prices"
+        : mode === "unavailable"
+          ? "Feed unavailable"
+          : mode
+            ? "Simulated prices"
+            : "Connecting";
   return (
     <div className="home">
       <a className="home-skip" href="#home-main">
         Skip to content
       </a>
+      <div className="broker-utility">
+        <div>
+          <span>Paper trading simulator</span>
+          <span>
+            Virtual funds only <i /> No brokerage connection
+          </span>
+        </div>
+      </div>
       <header className="home-nav">
         <a href="/" className="home-brand" aria-label="Paper Trader home">
-          <span>
-            <Icon name="chart" size={23} />
-          </span>
-          PAPER<span className="brand-light">TRADER</span>
+          <Icon name="chart" size={27} />
+          <strong>PaperTrader</strong>
         </a>
         <nav
           className={menu ? "home-links open" : "home-links"}
           aria-label="Main navigation"
+          id="mobile-menu-content"
         >
           <a href="#platform" onClick={close}>
-            The platform
+            Platform
+          </a>
+          <a href="#markets" onClick={close}>
+            Markets
           </a>
           <a href="#how-it-works" onClick={close}>
-            How it works
+            Getting started
           </a>
           <a href="#questions" onClick={close}>
             FAQ
@@ -103,302 +108,324 @@ export default function Home() {
         </nav>
         <a href="/terminal" className="nav-launch">
           Launch terminal
-          <Icon name="arrow" size={16} />
+          <Icon name="arrow" size={15} />
         </a>
         <button
           className="home-menu"
           aria-label="Toggle navigation"
           aria-expanded={menu}
+          aria-controls="mobile-menu-content"
           onClick={() => setMenu((v) => !v)}
         >
           {menu ? <Icon name="close" /> : <span aria-hidden="true">☰</span>}
         </button>
       </header>
       <main id="home-main">
-        <section className="home-hero">
-          <div className="hero-orbit" aria-hidden="true" />
-          <div className="hero-content">
-            <p className="home-eyebrow">
-              <span />
-              THE MARKET IS YOUR CLASSROOM
-            </p>
-            <h1>
-              Get a feel
-              <br />
-              for <em>the market.</em>
-            </h1>
-            <p className="hero-description">
-              A real trading workspace. $100,000 in virtual cash.
-              <br className="desktop-break" /> Room to practice every move.
-            </p>
-            <div className="hero-actions">
-              <a className="home-cta" href="/terminal">
-                Start practicing
-                <Icon name="arrow" size={19} />
-              </a>
-              <a className="home-text-link" href="#how-it-works">
-                See how it works<span aria-hidden="true">↓</span>
-              </a>
-            </div>
-            <p className="hero-fine">
-              <span className="checkmark">✓</span>No real money
-              <span className="checkmark">✓</span>No brokerage connection
-            </p>
-          </div>
-          <div className="hero-card">
-            <div className="capital-heading">
-              <span className="capital-icon">
-                <Icon name="wallet" size={20} />
-              </span>
-              <span>YOUR STARTING CAPITAL</span>
-              <span className="virtual-badge">VIRTUAL</span>
-            </div>
-            <div className="capital-value">
-              $100,000<span>.00</span>
-            </div>
-            <div className="capital-caption">
-              <span className="capital-dot" />
-              Ready for your first trade.
-            </div>
-            <div className="capital-divider" />
-            <div className="home-quotes-heading">
-              <span>A FEW PLACES TO START</span>
-              <span>
-                {mode === "finnhub"
-                  ? "LIVE QUOTES"
-                  : mode === "static"
-                    ? "STATIC QUOTES"
-                    : mode === "unavailable"
-                      ? "FEED OFFLINE"
-                      : mode
-                        ? "SIMULATED"
-                        : "CONNECTING"}
-              </span>
-            </div>
-            {["AAPL", "NVDA", "MSFT"].map((symbol, i) => {
-              const q = quotes.find((q) => q.symbol === symbol);
-              return (
-                <a
-                  className="home-quote"
-                  href={"/terminal?symbol=" + symbol}
-                  key={symbol}
-                >
-                  <span className={"company-icon company-" + i}>
-                    {symbol.slice(0, 1)}
-                  </span>
-                  <span>
-                    <b>{symbol}</b>
-                    <small>{names[symbol]}</small>
-                  </span>
-                  <strong>{q ? money(q.price) : "—"}</strong>
-                  <Icon name="chevron" size={14} />
+        <section className="broker-hero">
+          <div className="broker-hero-inner">
+            <div className="broker-introduction">
+              <span className="home-eyebrow">PAPER TRADING</span>
+              <h1>
+                Practice trading <br />
+                with virtual funds.
+              </h1>
+              <p>
+                $100,000 in virtual buying power. Place market and limit orders,
+                track your positions, and review every execution.
+              </p>
+              <div className="hero-actions">
+                <a className="home-cta" href="/terminal?setup=1">
+                  Open practice account
+                  <Icon name="chevron" size={15} />
                 </a>
-              );
-            })}
-            <a href="/terminal" className="all-instruments">
-              Explore the trading desk
-              <Icon name="arrow" size={14} />
-            </a>
+                <a className="home-secondary" href="/terminal">
+                  Explore the terminal
+                </a>
+              </div>
+              <div className="hero-fine">
+                No real money or brokerage account required.
+              </div>
+            </div>
+            <div className="broker-product">
+              <div className="product-label">
+                <span>PaperTrader Terminal</span>
+                <span>Platform preview</span>
+              </div>
+              <a
+                className="terminal-preview"
+                href="/terminal"
+                aria-label="Open the trading terminal"
+              >
+                <img
+                  src="/terminal-preview.png"
+                  alt="Trading terminal showing a watchlist, price chart, order ticket, and portfolio positions"
+                  width="1440"
+                  height="1148"
+                />
+              </a>
+              <p className="preview-caption">
+                Illustrative terminal view. Prices and balances shown are
+                simulated.
+              </p>
+            </div>
           </div>
         </section>
-        <div className="home-facts">
+        <div className="broker-specifications">
           <div>
-            <strong>
-              100<span>k</span>
-            </strong>
-            <span>VIRTUAL STARTING CAPITAL</span>
+            <span>Starting balance</span>
+            <strong>$100,000 virtual</strong>
           </div>
           <div>
-            <strong>12</strong>
-            <span>STOCKS TO EXPLORE</span>
+            <span>Markets</span>
+            <strong>12 US equities</strong>
           </div>
           <div>
-            <strong>2</strong>
-            <span>ORDER TYPES TO PRACTICE</span>
+            <span>Order types</span>
+            <strong>Market and limit</strong>
           </div>
           <div>
-            <strong>0</strong>
-            <span>REAL DOLLARS AT RISK</span>
+            <span>Account tools</span>
+            <strong>Positions, P&L, trade history</strong>
           </div>
         </div>
-        <section id="platform" className="home-platform home-section">
-          <div className="section-kicker">
-            <span>01 / THE PLATFORM</span>
-            <span>BUILT FOR YOUR LEARNING CURVE</span>
-          </div>
-          <div className="home-section-heading">
-            <h2>
-              Your space
-              <br />
-              to figure it out.
-            </h2>
-            <p>
-              Follow a price. Make a plan. Place an order.
-              <br />A complete terminal that keeps your decisions
-              <br className="desktop-break" /> and their outcomes in view.
+        <section id="markets" className="broker-section market-overview">
+          <div className="market-content">
+            <div className="section-title">
+              <h2>Market overview</h2>
+              <span
+                className={
+                  "market-feed " + (mode === "unavailable" ? "offline" : "")
+                }
+              >
+                <i />
+                {feedLabel}
+              </span>
+            </div>
+            <p className="section-description">
+              Select an instrument to open its chart and order ticket.
+            </p>
+            <div className="broker-market-table">
+              <table aria-label="Available market quotes">
+                <thead>
+                  <tr>
+                    <th>Instrument</th>
+                    <th>Last price</th>
+                    <th>Quote time</th>
+                    <th>
+                      <span className="sr-only">Open instrument</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(names).map(([symbol, name]) => {
+                    const q = quotes.find((q) => q.symbol === symbol);
+                    const valid = q && new Date(q.asOf).getTime() > 0;
+                    return (
+                      <tr key={symbol}>
+                        <td>
+                          <a
+                            className="home-quote"
+                            href={"/terminal?symbol=" + symbol}
+                          >
+                            <b>{symbol}</b>
+                            <small>{name}</small>
+                          </a>
+                        </td>
+                        <td className="market-price">
+                          {valid ? money(q.price) : "—"}
+                        </td>
+                        <td className="quote-time">
+                          {valid
+                            ? new Date(q.asOf).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })
+                            : "—"}
+                        </td>
+                        <td>
+                          <a
+                            className="quote-action"
+                            href={"/terminal?symbol=" + symbol}
+                            aria-label={"Open " + symbol + " in terminal"}
+                          >
+                            <span>View</span>
+                            <Icon name="chevron" size={13} />
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="market-footnote">
+              Displayed prices are for this practice environment. Check the feed
+              label before placing an order.
             </p>
           </div>
-          <a
-            href="/terminal"
-            className="terminal-preview"
-            aria-label="Open the trading terminal"
-          >
-            <div className="preview-chrome">
-              <span>
-                <i />
-                <i />
-                <i />
-              </span>
-              <b>PAPERTRADER / WORKSPACE</b>
-              <span className="preview-open">
-                Open terminal
+          <aside className="account-access">
+            <Icon name="wallet" size={25} />
+            <h3>Your practice account</h3>
+            <p>
+              Start with virtual funds and access the full trading workspace.
+            </p>
+            <ul>
+              <li>Market and limit orders</li>
+              <li>Position and P&L tracking</li>
+              <li>A record of every execution</li>
+            </ul>
+            <a className="home-cta" href="/terminal?setup=1">
+              Create practice account
+              <Icon name="chevron" size={14} />
+            </a>
+            <div className="returning-account">
+              <span>Already have an account?</span>
+              <a href="/terminal">
+                Continue to terminal
                 <Icon name="arrow" size={13} />
-              </span>
+              </a>
             </div>
-            <img
-              src="/terminal-preview.png"
-              alt="PaperTrader terminal showing the watchlist, interactive price chart, order entry, and portfolio positions"
-              loading="lazy"
-              width="1440"
-              height="1148"
-            />
-            <div className="preview-bottom">
-              <span>THE FULL WORKSPACE. YOUR NEXT MOVE.</span>
-              <span>
-                Explore terminal <Icon name="arrow" size={18} />
-              </span>
+          </aside>
+        </section>
+        <section id="platform" className="broker-platform">
+          <div className="broker-section">
+            <div className="section-heading-row">
+              <div>
+                <span className="home-eyebrow">TRADING PLATFORM</span>
+                <h2>The tools to manage every trade.</h2>
+              </div>
+              <a href="/terminal" className="home-text-link">
+                View the terminal
+                <Icon name="arrow" size={15} />
+              </a>
             </div>
-          </a>
-          <p className="preview-caption">
-            Terminal preview · Prices and balances shown are simulated.
-          </p>
-          <div className="feature-grid">
-            {features.map((f) => (
-              <article key={f.number}>
-                <div className="feature-top">
-                  <span>{f.number}</span>
-                  <Icon name={f.icon} size={24} />
-                </div>
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
-                <div className="feature-tags">
-                  {f.tags.map((t) => (
-                    <span key={t}>{t}</span>
-                  ))}
-                </div>
-              </article>
-            ))}
+            <div className="broker-features">
+              {[
+                [
+                  "Charts and watchlists",
+                  "Follow observed price movements, compare instruments, and switch directly from the watchlist to your order ticket.",
+                  "chart",
+                ],
+                [
+                  "Order management",
+                  "Execute at the current quote or specify a limit price. Review, track, and cancel open orders from one place.",
+                  "activity",
+                ],
+                [
+                  "Portfolio reporting",
+                  "See your available cash, positions, and realized and unrealized P&L, with a complete execution history.",
+                  "wallet",
+                ],
+              ].map(([title, text, icon]) => (
+                <article key={title}>
+                  <Icon name={icon} size={23} />
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
-        <section id="how-it-works" className="home-how home-section">
-          <div className="section-kicker">
-            <span>02 / GETTING STARTED</span>
-            <span>FROM CURIOUS TO HANDS-ON</span>
+        <section id="how-it-works" className="broker-section broker-how">
+          <div className="section-heading-row">
+            <div>
+              <span className="home-eyebrow">GETTING STARTED</span>
+              <h2>Open an account and place a practice order.</h2>
+            </div>
           </div>
-          <div className="home-section-heading">
-            <h2>
-              Three steps.
-              <br />A thousand things to learn.
-            </h2>
-            <a className="home-text-link" href="/terminal">
-              Let's get started
-              <Icon name="arrow" size={18} />
-            </a>
-          </div>
-          <div className="steps-grid">
+          <ol>
             {[
               [
-                "01",
-                "Make it yours.",
-                "Create a practice account in the terminal. Your $100,000 virtual balance is ready immediately.",
+                "Create your account",
+                "Choose a practice account name. Your virtual starting balance is available immediately.",
               ],
               [
-                "02",
-                "Pick your moment.",
-                "Explore the watchlist, follow the chart, and choose a market order or set your own limit price.",
+                "Select an instrument",
+                "Open a chart from the market list and enter the quantity and order type.",
               ],
               [
-                "03",
-                "Learn from the result.",
-                "Watch orders execute, review your positions and P&L, and use your trade history to reflect on your decisions.",
+                "Review your activity",
+                "Track your order status and review the impact on your positions and buying power.",
               ],
-            ].map(([n, title, text]) => (
-              <article key={n}>
-                <span className="step-number">{n}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
+            ].map(([title, text], i) => (
+              <li key={title}>
+                <span>{i + 1}</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </section>
-        <section id="questions" className="home-faq home-section">
-          <div className="faq-intro">
-            <p className="section-kicker">03 / GOOD QUESTIONS</p>
-            <h2>
-              Before your
-              <br />
-              first trade.
-            </h2>
-            <p>
-              A few things to know about
-              <br />
-              your practice workspace.
-            </p>
+        <section id="questions" className="broker-section broker-faq">
+          <div>
+            <span className="home-eyebrow">SUPPORT</span>
+            <h2>Frequently asked questions</h2>
+            <p>About the practice account and how orders are simulated.</p>
           </div>
           <div className="faq-list">
             {faqs.map(([q, a]) => (
               <details key={q}>
                 <summary>
-                  {q}
-                  <span aria-hidden="true">+</span>
+                  <span>{q}</span>
+                  <span className="faq-plus" aria-hidden="true">
+                    +
+                  </span>
                 </summary>
                 <p>{a}</p>
               </details>
             ))}
           </div>
         </section>
-        <section className="home-final">
-          <span className="home-eyebrow">
-            <span />
-            YOUR WORKSPACE IS READY
-          </span>
-          <h2>
-            Make your first move
-            <br />
-            <em>a practice move.</em>
-          </h2>
-          <a href="/terminal" className="home-cta">
-            Launch your terminal
-            <Icon name="arrow" size={20} />
+        <div className="broker-final">
+          <div>
+            <h2>Start with a practice account.</h2>
+            <p>
+              Use virtual funds to become familiar with the trading workflow.
+            </p>
+          </div>
+          <a className="home-cta" href="/terminal?setup=1">
+            Open practice account
+            <Icon name="chevron" size={15} />
           </a>
-          <p>Virtual cash. Real curiosity.</p>
-        </section>
+        </div>
       </main>
       <footer className="home-footer">
-        <div>
-          <a href="/" className="home-brand">
-            <span>
-              <Icon name="chart" size={21} />
-            </span>
-            PAPER<span className="brand-light">TRADER</span>
-          </a>
-          <p>A place to practice the market.</p>
+        <div className="footer-main">
+          <div>
+            <a href="/" className="home-brand">
+              <Icon name="chart" size={25} />
+              <strong>PaperTrader</strong>
+            </a>
+            <p>A local paper-trading simulator.</p>
+          </div>
+          <nav aria-label="Footer navigation">
+            <a href="/terminal">Terminal</a>
+            <a href="#markets">Markets</a>
+            <a href="#how-it-works">Getting started</a>
+            <a href="#questions">FAQ</a>
+            <a
+              href="https://github.com/nishantshah0/paper-trader"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source code ↗
+            </a>
+          </nav>
         </div>
-        <nav aria-label="Footer navigation">
-          <a href="/terminal">Terminal</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#questions">FAQ</a>
-          <a
-            href="https://github.com/nishantshah0/paper-trader"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub ↗
-          </a>
-        </nav>
-        <div className="footer-bottom">
-          <span>SIMULATION ONLY · NO REAL FUNDS OR ORDERS</span>
-          <span>Built for learning by doing.</span>
+        <div className="footer-disclosure">
+          <p>
+            PaperTrader is a simulation. No real funds are held and no orders
+            are sent to a brokerage. Fills do not model slippage, liquidity, or
+            commissions. Practice results do not predict real-market
+            performance.
+          </p>
+          <p>
+            Practice accounts are shared in this demo. Account IDs are not
+            private credentials.
+          </p>
         </div>
       </footer>
     </div>
