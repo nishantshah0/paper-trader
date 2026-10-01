@@ -15,7 +15,7 @@ async function open(page, id) {
     (id) => localStorage.setItem("paper-trader.account", String(id)),
     id,
   );
-  await page.goto("/");
+  await page.goto("/terminal");
   await expect(page.getByText("Account #" + id, { exact: true })).toBeVisible();
   await expect(page.getByText("Connected", { exact: true })).toBeVisible();
 }
@@ -23,7 +23,7 @@ async function open(page, id) {
 test("create an account, buy and sell, and show trade history", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/terminal");
   await page.getByLabel("New account name").fill("ui_" + Date.now());
   await page
     .getByRole("button", { name: "Create account", exact: true })
