@@ -17,6 +17,9 @@ class QuoteController {
         this.quotes = quotes;
     }
 
+    @GetMapping("/status")
+    java.util.Map<String, String> status() { return java.util.Map.of("mode", quotes.mode()); }
+
     @GetMapping
     List<Quote> all() {
         return quotes.all();

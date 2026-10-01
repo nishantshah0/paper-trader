@@ -6,6 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
+    Optional<Order> findByAccountIdAndIdempotencyKey(Long accountId, String idempotencyKey);
+
+    List<Order> findByStatusOrderByCreatedAtAscIdAsc(OrderStatus status);
+
     List<Order> findByAccountIdOrderByCreatedAtDesc(Long accountId);
 
     List<Order> findByAccountIdAndStatusOrderByCreatedAtDesc(Long accountId, OrderStatus status);

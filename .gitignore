@@ -49,3 +49,7 @@ logs/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Browser test artifacts
+frontend/test-results/
+frontend/playwright-report/

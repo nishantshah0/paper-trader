@@ -25,8 +25,9 @@ class OrderController {
 
     @PostMapping("/orders")
     @ResponseStatus(HttpStatus.CREATED)
-    OrderResponse place(@PathVariable Long accountId, @Valid @RequestBody PlaceOrderRequest request) {
-        return OrderResponse.from(service.place(accountId, request));
+    OrderResponse place(@PathVariable Long accountId, @Valid @RequestBody PlaceOrderRequest request,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        return OrderResponse.from(service.place(accountId, request, key));
     }
 
     @GetMapping("/orders")

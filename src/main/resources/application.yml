@@ -24,8 +24,12 @@ management:
         include: health,info
 
 papertrader:
+  feed:
+    mode: ${FEED_MODE:demo}
+    api-key: ${FINNHUB_API_KEY:}
+    interval-ms: ${FEED_INTERVAL_MS:15000}
   starting-cash: 100000.00
-  # placeholder prices until the market data feed lands; the feed overwrites these
+  # Demo reference prices; live mode will not execute against these seeds
   seed-quotes:
     AAPL: 232.15
     AMD: 152.20
