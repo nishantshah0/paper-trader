@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
 import { api, money, signed } from "./api";
+import Chart from "./Chart";
+import Icon from "./Icon";
 
 const companies = {
   AAPL: "Apple",
@@ -23,52 +25,20 @@ const initialAccount = () => {
     return "";
   }
 };
-function Chart({ points }) {
-  if (points.length < 2)
-    return (
-      <div className="chart-empty">
-        Collecting quotes… the price line appears after the next update.
-      </div>
-    );
-  const values = points.map((p) => Number(p.price));
-  const min = Math.min(...values),
-    max = Math.max(...values),
-    spread = Math.max(max - min, 0.01);
-  const line = values
-    .map((v, i) =>
-      [(i / (values.length - 1)) * 700, 140 - ((v - min) / spread) * 115].join(
-        ",",
-      ),
-    )
-    .join(" ");
-  return (
-    <svg
-      className="chart"
-      viewBox="0 0 700 160"
-      role="img"
-      aria-label="Price movement during this session"
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#93dbb1" stopOpacity=".25" />
-          <stop offset="1" stopColor="#93dbb1" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path
-        d={"M " + line.replaceAll(" ", " L ") + " L 700 160 L 0 160 Z"}
-        fill="url(#fade)"
-      />
-      <polyline
-        points={line}
-        fill="none"
-        stroke="#a9e5c0"
-        strokeWidth="2.5"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
+function mergeHistory(previous, samples) {
+  const next = { ...previous };
+  for (const sample of samples) {
+    if (new Date(sample.asOf).getTime() <= 0) continue;
+    const list = next[sample.symbol] || [];
+    const byTime = new Map(list.map((q) => [q.asOf, q]));
+    byTime.set(sample.asOf, sample);
+    next[sample.symbol] = [...byTime.values()]
+      .sort((a, b) => new Date(a.asOf) - new Date(b.asOf))
+      .slice(-240);
+  }
+  return next;
 }
+const percent = (value) => (value >= 0 ? "+" : "") + value.toFixed(2) + "%";
 export default function App() {
   const [account, setAccount] = useState(initialAccount),
     [portfolio, setPortfolio] = useState(null);
@@ -89,6 +59,22 @@ export default function App() {
     [existing, setExisting] = useState(""),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [search, setSearch] = useState(""),
+    [activeTab, setActiveTab] = useState("positions");
+  const [timeframe, setTimeframe] = useState("ALL"),
+    [accountModal, setAccountModal] = useState(false);
+  const dialog = useRef(null);
+  useEffect(() => {
+    if (accountModal) dialog.current?.showModal();
+    else dialog.current?.close();
+  }, [accountModal]);
+  useEffect(() => {
+    api("/quotes/history")
+      .then((data) =>
+        setHistory((prev) => mergeHistory(prev, Object.values(data).flat())),
+      )
+      .catch(() => {});
+  }, []);
   const accountRef = useRef(account),
     refreshSequence = useRef(0),
     pending = useRef(null);
@@ -99,14 +85,7 @@ export default function App() {
       list.forEach((q) => map.set(q.symbol, q));
       return [...map.values()].sort((a, b) => a.symbol.localeCompare(b.symbol));
     });
-    setHistory((prev) => {
-      const next = { ...prev };
-      list.forEach((q) => {
-        const a = prev[q.symbol] || [];
-        if (a.at(-1)?.asOf !== q.asOf) next[q.symbol] = [...a, q].slice(-60);
-      });
-      return next;
-    });
+    setHistory((prev) => mergeHistory(prev, list));
   }, []);
   const refresh = useCallback(async () => {
     const id = accountRef.current,
@@ -174,6 +153,7 @@ export default function App() {
   }, [account, refresh, recordQuotes]);
   const chooseAccount = (id) => {
     setAccount(String(id));
+    setAccountModal(false);
     try {
       localStorage.setItem("paper-trader.account", String(id));
     } catch {}
@@ -232,6 +212,7 @@ export default function App() {
       });
       pending.current = null;
       setNotice("Order #" + o.id + " · " + o.status.toLowerCase());
+      setActiveTab(o.status === "OPEN" ? "orders" : "positions");
       await refresh();
     } catch (e) {
       setError(e.message);
@@ -253,126 +234,163 @@ export default function App() {
     }
   }
   const selected = quotes.find((q) => q.symbol === symbol),
-    points = history[symbol] || [],
-    openOrders = orders.filter((o) => o.status === "OPEN");
+    allPoints = history[symbol] || [];
+  const cutoff =
+    timeframe === "ALL"
+      ? 0
+      : new Date(allPoints.at(-1)?.asOf || Date.now()).getTime() -
+        Number(timeframe) * 60000;
+  const points = allPoints.filter((q) => new Date(q.asOf).getTime() >= cutoff);
+  const first = points[0]?.price,
+    change =
+      first && selected
+        ? (Number(selected.price) / Number(first) - 1) * 100
+        : 0;
+  const openOrders = orders.filter((o) => o.status === "OPEN"),
+    filtered = quotes.filter((q) =>
+      (q.symbol + " " + companies[q.symbol])
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+    );
+  const estimate =
+    Number(quantity) *
+    (type === "LIMIT" ? Number(limit) : Number(selected?.price || 0));
+  const held =
+    portfolio?.positions.find((p) => p.symbol === symbol)?.quantity || 0;
+  const modeLabel =
+    mode === "finnhub"
+      ? "LIVE QUOTES"
+      : mode === "static"
+        ? "STATIC QUOTES"
+        : "SIMULATED QUOTES";
+  const historyChange = (q) => {
+    const start = history[q.symbol]?.[0]?.price;
+    return start ? (Number(q.price) / Number(start) - 1) * 100 : 0;
+  };
+  const accountForms = (
+    <>
+      <div className="account-intro">
+        <span className="eyebrow">PRACTICE ACCOUNT</span>
+        <h2>Your capital. Zero risk.</h2>
+        <p>Start with $100,000 in simulated buying power.</p>
+      </div>
+      <div className="account-forms">
+        <form onSubmit={create}>
+          <label htmlFor="username">New account name</label>
+          <input
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            minLength="3"
+            maxLength="32"
+            pattern="[a-z0-9_]+"
+            title="Lowercase letters, digits, and underscores"
+            placeholder="e.g. market_learner"
+          />
+          <button className="primary" disabled={busy}>
+            Create account
+          </button>
+        </form>
+        <form onSubmit={load}>
+          <label htmlFor="account-id">Existing account ID</label>
+          <input
+            id="account-id"
+            type="number"
+            min="1"
+            step="1"
+            required
+            value={existing}
+            onChange={(e) => setExisting(e.target.value)}
+            placeholder="Account ID"
+          />
+          <button className="secondary" disabled={busy}>
+            Open account
+          </button>
+        </form>
+      </div>
+      <p className="account-note">
+        Shared demo · Account IDs are public, not passwords.
+      </p>
+    </>
+  );
   return (
-    <div className="shell">
-      <header>
+    <div className="terminal">
+      <header className="topbar">
         <a className="brand" href="/" aria-label="Paper Trader home">
-          <span className="brand-mark">p.</span>paper<span>trader</span>
+          <span className="brand-logo">
+            <Icon name="chart" size={22} />
+          </span>
+          <strong>
+            PAPER<span>TRADER</span>
+          </strong>
+          <span className="version">TERMINAL</span>
         </a>
-        <span className="workspace-label">THE PRACTICE DESK</span>
-        <div className="connection">
-          <i className={connected ? "online" : ""} />
-          {connected ? "Connected" : "Reconnecting"}
+        <span className="header-divider" />
+        <span className="workspace">
+          <Icon name="grid" size={14} />
+          Trading workspace
+        </span>
+        <div className="topbar-right">
+          <span className="environment">PAPER ACCOUNT</span>
+          <button
+            className="account-toggle"
+            onClick={() => setAccountModal(true)}
+          >
+            <span className="avatar">
+              {portfolio?.username.slice(0, 1).toUpperCase() || "P"}
+            </span>
+            <span>
+              {portfolio?.username || "Open an account"}
+              <small>
+                {portfolio ? "Account #" + account : "Start trading"}
+              </small>
+            </span>
+            <Icon name="chevron" size={13} />
+          </button>
         </div>
       </header>
-      <div className="disclaimer">
-        <span className="pill">
-          {mode === "finnhub"
-            ? "LIVE FEED"
-            : mode === "static"
-              ? "STATIC PRICES"
-              : "DEMO FEED"}
+      <div className="ticker-tape" aria-label="Market ticker">
+        <span className="tape-label">
+          <span className="pulse-dot" />
+          {modeLabel}
         </span>
-        <span>
-          Practice with synthetic cash.{" "}
-          {mode === "finnhub"
-            ? "Quotes require a fresh market timestamp to trade."
-            : "Prices are simulated."}{" "}
-          No real orders.
-        </span>
+        {quotes.slice(0, 7).map((q) => (
+          <button key={q.symbol} onClick={() => setSymbol(q.symbol)}>
+            <b>{q.symbol}</b>
+            <span>{money(q.price)}</span>
+            <em className={historyChange(q) >= 0 ? "positive" : "negative"}>
+              {percent(historyChange(q))}
+            </em>
+          </button>
+        ))}
       </div>
       <main>
-        <div className="page-title">
+        <div className="workspace-heading">
           <div>
-            <p className="eyebrow">YOUR NEXT MOVE STARTS HERE</p>
-            <h1>
-              The trading desk<span>.</span>
-            </h1>
-            <p className="muted">A little practice. A clearer perspective.</p>
+            <span className="eyebrow">WORKSPACE /</span>
+            <h1>Trading terminal</h1>
           </div>
-          {portfolio && (
-            <div className="account-badge">
-              <span>{portfolio.username}</span>
-              <small>Account #{account}</small>
-              <button className="link" onClick={() => chooseAccount("")}>
-                Switch account
-              </button>
-            </div>
-          )}
+          <div className="connection">
+            <i className={connected ? "online" : ""} />
+            <span>{connected ? "Connected" : "Reconnecting"}</span>
+            <span className="mode-label">
+              {mode === "finnhub" ? "Provider feed" : "Demo environment"}
+            </span>
+          </div>
         </div>
-        {error && (
-          <div role="alert" className="alert">
-            {error}
-            <button aria-label="Dismiss error" onClick={() => setError("")}>
-              ×
-            </button>
-          </div>
+        {!portfolio && !account && !accountModal && (
+          <section className="onboarding">{accountForms}</section>
         )}
-        {notice && (
-          <div role="status" className="notice">
-            {notice}
-          </div>
-        )}
-        {!portfolio && (
-          <section className="onboarding panel">
-            <div>
-              <p className="eyebrow">A FRESH START</p>
-              <h2>Your first $100,000 is on us.</h2>
-              <p className="muted">
-                Create a practice account, or reopen one by its ID.
-              </p>
-              <small>
-                This is a shared demo. Account IDs are public, not passwords.
-              </small>
-            </div>
-            <form onSubmit={create}>
-              <label htmlFor="username">New account name</label>
-              <div className="inline">
-                <input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  minLength="3"
-                  maxLength="32"
-                  pattern="[a-z0-9_]+"
-                  title="Lowercase letters, digits, and underscores"
-                  placeholder="e.g. market_learner"
-                />
-                <button disabled={busy}>Create account</button>
-              </div>
-            </form>
-            <form onSubmit={load}>
-              <label htmlFor="account-id">Existing account ID</label>
-              <div className="inline">
-                <input
-                  id="account-id"
-                  type="number"
-                  min="1"
-                  step="1"
-                  required
-                  value={existing}
-                  onChange={(e) => setExisting(e.target.value)}
-                  placeholder="Account ID"
-                />
-                <button className="secondary" disabled={busy}>
-                  Open account
-                </button>
-              </div>
-            </form>
-          </section>
-        )}
-        <section className="metrics" aria-label="Portfolio summary">
+        <section className="account-strip" aria-label="Portfolio summary">
           {[
-            ["Account value", portfolio?.totalValue],
-            ["Available cash", portfolio?.cash],
-            ["Unrealized P&L", portfolio?.unrealizedPnl],
-            ["Realized P&L", portfolio?.realizedPnl],
-          ].map(([label, value], i) => (
+            ["Total equity", portfolio?.totalValue, "USD"],
+            ["Buying power", portfolio?.cash, "AVAILABLE"],
+            ["Unrealized P&L", portfolio?.unrealizedPnl, "OPEN POSITIONS"],
+            ["Realized P&L", portfolio?.realizedPnl, "CLOSED TRADES"],
+          ].map(([label, value, hint], i) => (
             <div className="metric" key={label}>
-              <p>{label}</p>
+              <span>{label}</span>
               <strong
                 className={
                   i > 1 && value != null
@@ -384,326 +402,582 @@ export default function App() {
               >
                 {value == null ? "—" : i > 1 ? signed(value) : money(value)}
               </strong>
-              <small>
-                {i === 0
-                  ? "Cash + current holdings"
-                  : i === 1
-                    ? "Open orders do not reserve cash"
-                    : i === 2
-                      ? "On your open positions"
-                      : "On your completed trades"}
-              </small>
+              <small>{hint}</small>
             </div>
           ))}
+          <div className="account-return">
+            <span>Account return</span>
+            <strong
+              className={portfolio?.totalPnl < 0 ? "negative" : "positive"}
+            >
+              {portfolio
+                ? percent(
+                    (Number(portfolio.totalPnl) /
+                      Number(portfolio.startingCash)) *
+                      100,
+                  )
+                : "—"}
+            </strong>
+            <span className="return-icon">
+              <Icon name="activity" size={34} />
+            </span>
+          </div>
         </section>
-        <div className="desk-grid">
-          <section className="market panel">
-            <div className="section-heading">
-              <h2>Market watch</h2>
-              <span className="muted">USD</span>
+        {error && (
+          <div className="alert" role="alert">
+            <span>{error}</span>
+            <button aria-label="Dismiss error" onClick={() => setError("")}>
+              <Icon name="close" size={15} />
+            </button>
+          </div>
+        )}
+        {notice && (
+          <div className="notice" role="status">
+            <span className="pulse-dot" />
+            {notice}
+            <button
+              aria-label="Dismiss notification"
+              onClick={() => setNotice("")}
+            >
+              <Icon name="close" size={14} />
+            </button>
+          </div>
+        )}
+        <div className="terminal-grid">
+          <aside className="watch-panel panel">
+            <div className="panel-heading">
+              <h2>Watchlist</h2>
+              <span className="count">{quotes.length}</span>
+            </div>
+            <label className="search">
+              <Icon name="search" size={14} />
+              <input
+                aria-label="Search symbols"
+                placeholder="Search symbol"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </label>
+            <div className="watch-columns">
+              <span>Symbol / Name</span>
+              <span>Price / Change</span>
             </div>
             <div className="watchlist">
-              {quotes.map((q) => (
+              {filtered.map((q) => (
                 <button
-                  key={q.symbol}
                   className={
                     "quote-row " + (symbol === q.symbol ? "selected" : "")
                   }
+                  key={q.symbol}
                   onClick={() => setSymbol(q.symbol)}
                 >
-                  <span className="ticker-icon">{q.symbol.slice(0, 1)}</span>
                   <span>
                     <b>{q.symbol}</b>
-                    <small>{companies[q.symbol] || q.symbol}</small>
+                    <small>{companies[q.symbol]}</small>
                   </span>
-                  <strong>{money(q.price)}</strong>
+                  <span>
+                    <strong>{money(q.price)}</strong>
+                    <small
+                      className={
+                        historyChange(q) >= 0 ? "positive" : "negative"
+                      }
+                    >
+                      {percent(historyChange(q))}
+                    </small>
+                  </span>
                 </button>
               ))}
-            </div>
-          </section>
-          <div className="center">
-            <section className="price-panel panel">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">{companies[symbol] || symbol}</p>
-                  <h2>
-                    {symbol} <span className="muted">/ USD</span>
-                  </h2>
-                </div>
-                <span className="pill">SESSION</span>
-              </div>
-              <div className="current-price">
-                {selected ? money(selected.price) : "—"}
-              </div>
-              <Chart points={points} />
-              <div className="chart-caption">
-                <span>
-                  Last {Math.min(points.length, 60)} quotes · this browser
-                  session
-                </span>
-                <span>
-                  {selected && new Date(selected.asOf).toLocaleTimeString()}
-                </span>
-              </div>
-            </section>
-            <section className="panel positions">
-              <div className="section-heading">
-                <h2>Your positions</h2>
-                <span className="count">
-                  {portfolio?.positions.length || 0}
-                </span>
-              </div>
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Symbol</th>
-                      <th>Shares</th>
-                      <th>Avg. cost</th>
-                      <th>Value</th>
-                      <th>Unrealized</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {portfolio?.positions.map((p) => (
-                      <tr key={p.symbol}>
-                        <td>
-                          <button
-                            className="link"
-                            onClick={() => setSymbol(p.symbol)}
-                          >
-                            {p.symbol}
-                          </button>
-                        </td>
-                        <td>{p.quantity}</td>
-                        <td>{money(p.avgCost)}</td>
-                        <td>{money(p.marketValue)}</td>
-                        <td
-                          className={
-                            p.unrealizedPnl >= 0 ? "positive" : "negative"
-                          }
-                        >
-                          {signed(p.unrealizedPnl)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {!portfolio?.positions.length && (
-                <p className="empty">
-                  Your portfolio starts with a first trade.
-                </p>
+              {!filtered.length && (
+                <p className="empty">No matching symbols.</p>
               )}
-            </section>
-          </div>
-          <section className="ticket panel">
-            <div className="section-heading">
-              <h2>Place an order</h2>
-              <span className="ticket-icon">↗</span>
             </div>
-            <form onSubmit={submit}>
-              <div className="segmented">
-                {["BUY", "SELL"].map((s) => (
+            <div className="watch-foot">
+              <Icon name="clock" size={12} />
+              Change since first observed quote
+            </div>
+          </aside>
+          <div className="center-column">
+            <section className="chart-panel panel">
+              <div className="instrument-header">
+                <span className="instrument-logo">{symbol.slice(0, 1)}</span>
+                <div>
+                  <h2>
+                    {symbol} <span>{companies[symbol]}</span>
+                  </h2>
+                  <small>
+                    US EQUITY <i /> USD <i />{" "}
+                    {mode === "finnhub" ? "LIVE FEED" : "PAPER TRADING"}
+                  </small>
+                </div>
+                <span className="instrument-more">{modeLabel}</span>
+              </div>
+              <div className="price-summary">
+                <strong>{selected ? money(selected.price) : "—"}</strong>
+                <span className={change >= 0 ? "positive" : "negative"}>
+                  {change >= 0 ? "↗" : "↘"} {percent(change)}
+                  <small> observed window</small>
+                </span>
+              </div>
+              <div className="chart-toolbar">
+                <div role="group" aria-label="Chart time range">
+                  {[
+                    ["5", "5m"],
+                    ["15", "15m"],
+                    ["60", "1h"],
+                    ["ALL", "All"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      aria-pressed={timeframe === value}
+                      className={timeframe === value ? "active" : ""}
+                      onClick={() => setTimeframe(value)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <span>
+                  <Icon name="chart" size={14} />
+                  Price line
+                  <span className="chart-divider" />
+                  USD
+                </span>
+              </div>
+              <Chart key={symbol + timeframe} points={points} symbol={symbol} />
+              <div className="chart-footer">
+                <span>
+                  <span className="pulse-dot" />{" "}
+                  {mode === "finnhub"
+                    ? "Provider quotes"
+                    : "Simulated price feed"}
+                </span>
+                <span>
+                  {selected
+                    ? "Last update " +
+                      new Date(selected.asOf).toLocaleTimeString()
+                    : "Connecting…"}
+                </span>
+              </div>
+            </section>
+            <section className="ledger panel">
+              <div
+                className="ledger-tabs"
+                role="tablist"
+                aria-label="Account activity"
+                onKeyDown={(e) => {
+                  const keys = ["positions", "orders", "history", "all"];
+                  if (
+                    !["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)
+                  )
+                    return;
+                  e.preventDefault();
+                  const index = keys.indexOf(activeTab);
+                  const next =
+                    e.key === "Home"
+                      ? 0
+                      : e.key === "End"
+                        ? 3
+                        : (index + (e.key === "ArrowRight" ? 1 : 3)) % 4;
+                  setActiveTab(keys[next]);
+                  document.getElementById("tab-" + keys[next])?.focus();
+                }}
+              >
+                {[
+                  ["positions", "Positions", portfolio?.positions.length || 0],
+                  ["orders", "Open orders", openOrders.length],
+                  ["history", "Trade history", trades.length],
+                  ["all", "All orders", orders.length],
+                ].map(([key, label, count]) => (
                   <button
-                    key={s}
-                    type="button"
-                    aria-pressed={side === s}
-                    className={side === s ? "active" : ""}
-                    onClick={() => setSide(s)}
+                    role="tab"
+                    aria-selected={activeTab === key}
+                    tabIndex={activeTab === key ? 0 : -1}
+                    aria-controls={"panel-" + key}
+                    id={"tab-" + key}
+                    key={key}
+                    onClick={() => setActiveTab(key)}
                   >
-                    {s === "BUY" ? "Buy" : "Sell"}
+                    {label}
+                    <span>{count}</span>
                   </button>
                 ))}
               </div>
-              <label htmlFor="symbol">Symbol</label>
-              <select
-                id="symbol"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-              >
-                {quotes.map((q) => (
-                  <option key={q.symbol}>{q.symbol}</option>
-                ))}
-              </select>
-              <label htmlFor="order-type">Order type</label>
-              <select
-                id="order-type"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              >
-                <option value="MARKET">Market order</option>
-                <option value="LIMIT">Limit order</option>
-              </select>
-              <label htmlFor="quantity">Quantity</label>
-              <input
-                id="quantity"
-                type="number"
-                min="1"
-                max="1000000"
-                step="1"
-                required
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-              />
-              {type === "LIMIT" && (
-                <>
-                  <label htmlFor="limit">Limit price</label>
-                  <input
-                    id="limit"
-                    type="number"
-                    min="0.0001"
-                    max="9999999999"
-                    step="0.0001"
-                    required
-                    value={limit}
-                    onChange={(e) => setLimit(e.target.value)}
-                  />
-                </>
-              )}
-              <div className="estimate">
-                <span>Estimated total</span>
-                <strong>
-                  {money(
-                    Number(quantity) *
-                      (type === "LIMIT"
-                        ? Number(limit)
-                        : Number(selected?.price || 0)),
-                  )}
-                </strong>
-              </div>
-              <button
-                className="submit-order"
-                disabled={busy || !portfolio || !selected}
-              >
-                {busy
-                  ? "Working…"
-                  : (side === "BUY" ? "Buy " : "Sell ") + symbol}
-              </button>
-              <p className="ticket-note">
-                {type === "LIMIT"
-                  ? "Fills when the quote crosses your limit. Funds are checked again at execution."
-                  : "Fills at the latest available quote. Whole shares only."}
-              </p>
-            </form>
-          </section>
-        </div>
-        <div className="bottom-grid">
-          <section className="panel">
-            <div className="section-heading">
-              <h2>Open orders</h2>
-              <span className="count">{openOrders.length}</span>
-            </div>
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>Side</th>
-                    <th>Shares</th>
-                    <th>Limit</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {openOrders.map((o) => (
-                    <tr key={o.id}>
-                      <td>{o.symbol}</td>
-                      <td>{o.side}</td>
-                      <td>{o.quantity}</td>
-                      <td>{money(o.limitPrice)}</td>
-                      <td>
-                        <button
-                          className="link"
-                          disabled={busy}
-                          onClick={() => cancel(o.id)}
-                        >
-                          Cancel #{o.id}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {!openOrders.length && (
-              <p className="empty">No orders waiting for a price.</p>
-            )}
-          </section>
-          <section className="panel">
-            <div className="section-heading">
-              <h2>Leaderboard</h2>
-              <span className="muted">By return</span>
-            </div>
-            {leaders.slice(0, 5).map((l, i) => (
-              <div className="leader" key={l.accountId}>
-                <span className="rank">{String(i + 1).padStart(2, "0")}</span>
-                <div>
-                  <b>{l.username}</b>
-                  <small>{money(l.totalValue)}</small>
-                </div>
-                <strong
-                  className={l.returnPercent >= 0 ? "positive" : "negative"}
+              {activeTab === "positions" && (
+                <section
+                  className="positions"
+                  role="tabpanel"
+                  id="panel-positions"
+                  aria-labelledby="tab-positions"
                 >
-                  {l.returnPercent >= 0 ? "+" : ""}
-                  {Number(l.returnPercent).toFixed(2)}%
-                </strong>
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Instrument</th>
+                          <th>Quantity</th>
+                          <th>Avg. price</th>
+                          <th>Market value</th>
+                          <th>Unrealized P&L</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {portfolio?.positions.map((p) => (
+                          <tr key={p.symbol}>
+                            <td>
+                              <button
+                                className="symbol-link"
+                                onClick={() => setSymbol(p.symbol)}
+                              >
+                                {p.symbol}
+                              </button>
+                            </td>
+                            <td>{p.quantity}</td>
+                            <td>{money(p.avgCost)}</td>
+                            <td>{money(p.marketValue)}</td>
+                            <td
+                              className={
+                                p.unrealizedPnl >= 0 ? "positive" : "negative"
+                              }
+                            >
+                              {signed(p.unrealizedPnl)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {!portfolio?.positions.length && (
+                    <div className="empty-state">
+                      <Icon name="wallet" size={23} />
+                      <b>No open positions</b>
+                      <span>Your portfolio starts with a first trade.</span>
+                    </div>
+                  )}
+                </section>
+              )}
+              {activeTab === "orders" && (
+                <section
+                  role="tabpanel"
+                  id="panel-orders"
+                  aria-labelledby="tab-orders"
+                >
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Instrument</th>
+                          <th>Side</th>
+                          <th>Quantity</th>
+                          <th>Limit price</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {openOrders.map((o) => (
+                          <tr key={o.id}>
+                            <td>{o.symbol}</td>
+                            <td>
+                              <span className={"side " + o.side.toLowerCase()}>
+                                {o.side}
+                              </span>
+                            </td>
+                            <td>{o.quantity}</td>
+                            <td>{money(o.limitPrice)}</td>
+                            <td>
+                              <button
+                                className="cancel-order"
+                                disabled={busy}
+                                onClick={() => cancel(o.id)}
+                              >
+                                Cancel #{o.id}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {!openOrders.length && (
+                    <div className="empty-state">
+                      <Icon name="clock" size={23} />
+                      <b>No working orders</b>
+                      <span>Your limit orders will appear here.</span>
+                    </div>
+                  )}
+                </section>
+              )}
+              {activeTab === "history" && (
+                <section
+                  className="history"
+                  role="tabpanel"
+                  id="panel-history"
+                  aria-labelledby="tab-history"
+                >
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Instrument</th>
+                          <th>Side</th>
+                          <th>Quantity</th>
+                          <th>Fill price</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trades.slice(0, 50).map((t) => (
+                          <tr key={t.id}>
+                            <td>
+                              {new Date(t.executedAt).toLocaleTimeString()}
+                            </td>
+                            <td>{t.symbol}</td>
+                            <td>
+                              <span className={"side " + t.side.toLowerCase()}>
+                                {t.side}
+                              </span>
+                            </td>
+                            <td>{t.quantity}</td>
+                            <td>{money(t.price)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {!trades.length && (
+                    <div className="empty-state">
+                      <Icon name="activity" size={23} />
+                      <b>No executions yet</b>
+                      <span>Completed trades appear here.</span>
+                    </div>
+                  )}
+                </section>
+              )}
+              {activeTab === "all" && (
+                <section
+                  role="tabpanel"
+                  id="panel-all"
+                  aria-labelledby="tab-all"
+                >
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Order</th>
+                          <th>Symbol</th>
+                          <th>Side</th>
+                          <th>Quantity</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.slice(0, 50).map((o) => (
+                          <tr key={o.id}>
+                            <td>#{o.id}</td>
+                            <td>{o.symbol}</td>
+                            <td>{o.side}</td>
+                            <td>{o.quantity}</td>
+                            <td>
+                              <span
+                                className={
+                                  "order-status " + o.status.toLowerCase()
+                                }
+                              >
+                                {o.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {!orders.length && (
+                    <div className="empty-state">
+                      <Icon name="activity" size={23} />
+                      <b>No orders yet</b>
+                      <span>Submit your first order from the ticket.</span>
+                    </div>
+                  )}
+                </section>
+              )}
+            </section>
+          </div>
+          <aside className="right-column">
+            <section className="order-panel panel">
+              <div className="panel-heading">
+                <h2>Order entry</h2>
+                <span className="paper-label">PAPER</span>
               </div>
-            ))}
-            {!leaders.length && (
-              <p className="empty">The first spot is waiting for you.</p>
-            )}
-          </section>
+              <form onSubmit={submit}>
+                <div className="segmented">
+                  {["BUY", "SELL"].map((s) => (
+                    <button
+                      type="button"
+                      key={s}
+                      aria-pressed={side === s}
+                      className={side === s ? "active " + s.toLowerCase() : ""}
+                      onClick={() => setSide(s)}
+                    >
+                      {s === "BUY" ? "Buy" : "Sell"}
+                    </button>
+                  ))}
+                </div>
+                <div className="field">
+                  <label htmlFor="symbol">Instrument</label>
+                  <select
+                    id="symbol"
+                    value={symbol}
+                    onChange={(e) => setSymbol(e.target.value)}
+                  >
+                    {quotes.map((q) => (
+                      <option key={q.symbol}>{q.symbol}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="order-type">Order type</label>
+                  <select
+                    id="order-type"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                  >
+                    <option value="MARKET">Market</option>
+                    <option value="LIMIT">Limit</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="quantity">
+                    Quantity<span aria-hidden="true">SHARES</span>
+                  </label>
+                  <input
+                    id="quantity"
+                    type="number"
+                    required
+                    min="1"
+                    max="1000000"
+                    step="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                  />
+                </div>
+                {type === "LIMIT" && (
+                  <div className="field">
+                    <label htmlFor="limit">
+                      Limit price<span aria-hidden="true">USD</span>
+                    </label>
+                    <input
+                      id="limit"
+                      type="number"
+                      required
+                      min="0.0001"
+                      max="9999999999"
+                      step="0.0001"
+                      value={limit}
+                      onChange={(e) => setLimit(e.target.value)}
+                    />
+                  </div>
+                )}
+                <div className="quantity-shortcuts">
+                  {[1, 5, 10, 25].map((q) => (
+                    <button
+                      type="button"
+                      key={q}
+                      onClick={() => setQuantity(String(q))}
+                    >
+                      {q} shares
+                    </button>
+                  ))}
+                </div>
+                <div className="order-summary">
+                  <div>
+                    <span>Market price</span>
+                    <b>{selected ? money(selected.price) : "—"}</b>
+                  </div>
+                  <div>
+                    <span>
+                      {side === "BUY" ? "Buying power" : "Shares available"}
+                    </span>
+                    <b>
+                      {side === "BUY"
+                        ? portfolio
+                          ? money(portfolio.cash)
+                          : "—"
+                        : held}
+                    </b>
+                  </div>
+                  <div className="order-total">
+                    <span>Estimated total</span>
+                    <b>{money(estimate)}</b>
+                  </div>
+                </div>
+                <button
+                  className={"submit-order " + side.toLowerCase()}
+                  disabled={busy || !portfolio || !selected}
+                >
+                  {busy
+                    ? "Submitting…"
+                    : (side === "BUY" ? "Buy " : "Sell ") + symbol}
+                  <Icon name="arrow" size={15} />
+                </button>
+                <p className="order-note">
+                  {type === "LIMIT"
+                    ? "Executes when the quote crosses your limit. Cash and shares are checked at execution."
+                    : "Executes at the latest quote. Whole shares only. No commissions."}
+                </p>
+              </form>
+            </section>
+            <section className="leaderboard panel">
+              <div className="panel-heading">
+                <h2>Top traders</h2>
+                <span className="muted">RETURN</span>
+              </div>
+              {leaders.slice(0, 4).map((l, i) => (
+                <div className="leader" key={l.accountId}>
+                  <span className="rank">{String(i + 1).padStart(2, "0")}</span>
+                  <span title={l.username}>
+                    {l.username}
+                    <small>{money(l.totalValue)}</small>
+                  </span>
+                  <strong
+                    className={l.returnPercent >= 0 ? "positive" : "negative"}
+                  >
+                    {percent(Number(l.returnPercent))}
+                  </strong>
+                </div>
+              ))}
+              {!leaders.length && (
+                <p className="empty">Create an account to join the board.</p>
+              )}
+            </section>
+          </aside>
         </div>
-        <section className="panel history">
-          <div className="section-heading">
-            <h2>Trade history</h2>
-            <span className="muted">Most recent first</span>
-          </div>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Executed</th>
-                  <th>Symbol</th>
-                  <th>Side</th>
-                  <th>Shares</th>
-                  <th>Fill price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trades.slice(0, 50).map((t) => (
-                  <tr key={t.id}>
-                    <td>{new Date(t.executedAt).toLocaleString()}</td>
-                    <td>{t.symbol}</td>
-                    <td>
-                      <span className={"side " + t.side.toLowerCase()}>
-                        {t.side}
-                      </span>
-                    </td>
-                    <td>{t.quantity}</td>
-                    <td>{money(t.price)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!trades.length && (
-            <p className="empty">Completed trades will appear here.</p>
-          )}
-        </section>
-        {orders.some((o) => o.status === "REJECTED") && (
-          <section className="notice">
-            {orders.filter((o) => o.status === "REJECTED").length} resting
-            order(s) rejected because cash or shares were unavailable at
-            execution.
-          </section>
-        )}
       </main>
       <footer>
-        <span>papertrader · Built for the learning curve.</span>
-        <span>Simulation only · No brokerage connection</span>
+        <span>
+          <span className="pulse-dot" />
+          All trades are simulated. No real funds.
+        </span>
+        <span>
+          PAPERTRADER <i /> {quotes.length} INSTRUMENTS <i /> USD
+        </span>
       </footer>
+      <dialog
+        ref={dialog}
+        className="account-dialog"
+        onCancel={() => setAccountModal(false)}
+        onClick={(e) => {
+          if (e.target === dialog.current) setAccountModal(false);
+        }}
+      >
+        <button
+          className="dialog-close"
+          aria-label="Close account dialog"
+          onClick={() => setAccountModal(false)}
+        >
+          <Icon name="close" />
+        </button>
+        {accountModal && accountForms}
+        {error && <p className="negative">{error}</p>}
+      </dialog>
     </div>
   );
 }
