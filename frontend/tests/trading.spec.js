@@ -40,6 +40,7 @@ test("create an account, buy and sell, and show trade history", async ({
   await expect(
     positions.getByText("Your portfolio starts with a first trade."),
   ).toBeVisible();
+  await page.getByRole("tab", { name: /Trade history/ }).click();
   await expect(page.locator("section.history tbody tr")).toHaveCount(2);
 });
 
@@ -139,4 +140,88 @@ test("dashboard fits desktop and mobile viewports", async ({
     path: "test-results/dashboard-mobile.png",
     fullPage: true,
   });
+});
+
+test("terminal search, symbol selection, chart range and order shortcuts work", async ({
+  page,
+  request,
+}) => {
+  const a = await account(request);
+  await open(page, a.id);
+  await page.getByRole("textbox", { name: "Search symbols" }).fill("nvidia");
+  await expect(page.locator(".quote-row")).toHaveCount(1);
+  await page.locator(".quote-row").click();
+  await expect(
+    page.getByRole("heading", { name: "NVDA NVIDIA" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "10 shares", exact: true }).click();
+  await expect(
+    page.getByRole("spinbutton", { name: "Quantity", exact: true }),
+  ).toHaveValue("10");
+  await page.getByRole("button", { name: "5m", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "5m", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByLabel("Order type").selectOption("LIMIT");
+  await page.getByLabel("Limit price").fill("1");
+  await page.getByRole("button", { name: "Buy NVDA", exact: true }).click();
+  await expect(page.getByRole("tab", { name: /Open orders/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await page.getByRole("button", { name: /Cancel #/ }).click();
+  await page.getByRole("tab", { name: /All orders/ }).click();
+  await expect(page.getByRole("tabpanel")).toContainText("CANCELLED");
+});
+
+test("chart keeps server-observed history across a browser reload", async ({
+  page,
+  request,
+}) => {
+  await expect
+    .poll(
+      async () => {
+        const r = await request.get("/api/quotes/history");
+        return (await r.json()).AAPL.length;
+      },
+      { timeout: 20000 },
+    )
+    .toBeGreaterThan(1);
+  const a = await account(request);
+  await open(page, a.id);
+  await expect(page.locator(".chart-readout-end")).not.toHaveText(
+    "0 OBSERVED QUOTES",
+  );
+  await page.reload();
+  await expect(page.locator(".chart polyline")).toBeVisible();
+  await expect(page.locator(".chart-wait")).toHaveCount(0);
+});
+
+test("account switching and keyboard activity tabs work", async ({
+  page,
+  request,
+}) => {
+  const first = await account(request),
+    second = await account(request);
+  await open(page, first.id);
+  await page.locator(".account-toggle").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByLabel("Existing account ID").fill(String(second.id));
+  await page.getByRole("button", { name: "Open account", exact: true }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(
+    page.getByText("Account #" + second.id, { exact: true }),
+  ).toBeVisible();
+  const positions = page.getByRole("tab", { name: /Positions/ });
+  await positions.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: /Open orders/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await page.keyboard.press("End");
+  await expect(page.getByRole("tab", { name: /All orders/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
 });
