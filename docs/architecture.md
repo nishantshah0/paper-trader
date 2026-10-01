@@ -18,6 +18,8 @@ Demo generator or Finnhub quote API
                               React reloads portfolio/orders/trades
 ```
 
+QuoteCache keeps an immutable snapshot of at most 240 observed quotes per symbol. The REST history endpoint hydrates charts after a browser refresh. Older updates are ignored, equal-timestamp updates replace the last sample, and live-mode seed prices are excluded. This bounded memory buffer resets on server restart.
+
 The quote feed and matcher use Spring's scheduler. They run independently of browser connections. Each candidate match invokes a separate proxied transactional service call; a failure for one account does not stop the remaining candidates.
 
 ## Why a database-backed book
