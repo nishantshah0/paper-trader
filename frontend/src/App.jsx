@@ -49,7 +49,14 @@ export default function App() {
   const [mode, setMode] = useState(""),
     [connected, setConnected] = useState(false),
     [history, setHistory] = useState({});
-  const [symbol, setSymbol] = useState("AAPL"),
+  const [symbol, setSymbol] = useState(() => {
+      const requested = new URLSearchParams(location.search)
+        .get("symbol")
+        ?.toUpperCase();
+      return requested && Object.hasOwn(companies, requested)
+        ? requested
+        : "AAPL";
+    }),
     [side, setSide] = useState("BUY"),
     [type, setType] = useState("MARKET");
   const [quantity, setQuantity] = useState("1"),
