@@ -120,6 +120,29 @@ export default function Home() {
           {menu ? <Icon name="close" /> : <span aria-hidden="true">☰</span>}
         </button>
       </header>
+      <div className="home-market-strip">
+        <div className="market-strip-inner">
+          <span className="strip-feed">
+            <i />
+            {feedLabel}
+          </span>
+          {["AAPL", "NVDA", "MSFT", "AMZN", "GOOGL"].map((symbol) => {
+            const q = quotes.find((q) => q.symbol === symbol);
+            return (
+              <a
+                className="strip-quote"
+                href={"/terminal?symbol=" + symbol}
+                key={symbol}
+              >
+                <b>{symbol}</b>
+                <span>
+                  {q && new Date(q.asOf).getTime() > 0 ? money(q.price) : "—"}
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
       <main id="home-main">
         <section className="broker-hero">
           <div className="broker-hero-inner">
