@@ -69,3 +69,5 @@ JUnit/Testcontainers exercises real Postgres migrations and transactional behavi
 ## Frontend navigation
 
 The root route serves the product home page. The trading workspace lives at `/terminal`; `/terminal/` is also supported. The backend forwards only these explicit terminal routes to the bundled index, so direct navigation and refresh work without swallowing unknown API or asset routes. The terminal logo returns home. Instrument links pass a validated symbol query parameter, and the saved practice account remains in local storage across navigation.
+
+The home page uses a separate light navy-and-white layout with live cache snapshots in a semantic market table. Account-opening links use `/terminal?setup=1`; successful account selection clears that parameter so refreshes resume the selected account instead of reopening setup.

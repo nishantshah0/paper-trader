@@ -18,7 +18,7 @@ cd paper-trader
 docker compose --profile app up --build -d --wait
 ```
 
-Open **http://localhost:8080** for the home page, including the platform overview, getting-started guide, and FAQ. Choose **Launch terminal** or go directly to **http://localhost:8080/terminal**. Create a lowercase account name to receive $100,000 in synthetic cash. Keep the account ID to reopen it in another browser. The first image build downloads Java and Node dependencies and can take several minutes.
+Open **http://localhost:8080** for the home page, including the market overview, platform details, getting-started guide, and FAQ. Choose **Open practice account** to open account setup directly, or **Launch terminal** to resume trading at **http://localhost:8080/terminal**. Create a lowercase account name to receive $100,000 in synthetic cash. Keep the account ID to reopen it in another browser. The first image build downloads Java and Node dependencies and can take several minutes.
 
 The terminal has a searchable watchlist, chart crosshair and time ranges, quantity shortcuts, and keyboard-accessible activity tabs. Recent chart samples survive browser refreshes; the server keeps up to 240 observed quotes per symbol in memory and clears them on application restart. No historical prices are fabricated.
 
