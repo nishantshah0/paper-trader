@@ -10,6 +10,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -69,24 +70,27 @@ public class OrderService {
         return order;
     }
 
-    // The scheduler passes IDs, never managed entities: acquire the account lock before
-    // reading current order state so cancellation and repeated ticks cannot double-fill.
-    @Transactional
-    public void match(Long accountId, Long orderId) {
+    // The engine passes IDs, never managed entities: take the account lock, then read the
+    // order, so a cancel or a second match of the same order cannot double-fill.
+    // REQUIRES_NEW because the engine also calls this from an after-commit listener,
+    // where joining the finished transaction would silently drop the writes.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public OrderStatus match(Long accountId, Long orderId) {
         Account account = accounts.findByIdForUpdate(accountId).orElseThrow();
         Order order = find(accountId, orderId);
-        if (!order.isOpen()) return;
+        if (!order.isOpen()) return order.getStatus();
         Quote quote = quotes.get(order.getSymbol()).orElse(null);
-        if (quote == null || !quotes.isTradable(quote) || !order.crosses(quote.price())) return;
+        if (quote == null || !quotes.isTradable(quote) || !order.crosses(quote.price())) return order.getStatus();
         try {
             checkResources(account, order, quote.price());
         } catch (OrderRejectedException e) {
             order.reject();
             events.publishEvent(new OrderChanged(accountId, orderId, order.getStatus()));
-            return;
+            return order.getStatus();
         }
         fill(account, order, quote.price());
         events.publishEvent(new OrderChanged(accountId, orderId, order.getStatus()));
+        return order.getStatus();
     }
 
     // Open orders do not reserve cash/shares. Revalidate under the same account lock
