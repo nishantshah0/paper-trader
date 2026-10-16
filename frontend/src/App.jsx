@@ -147,9 +147,18 @@ export default function App() {
           refresh().catch(() => {});
         });
         if (account)
-          client.subscribe("/topic/accounts/" + account, () =>
-            refresh().catch(() => {}),
-          );
+          client.subscribe("/topic/accounts/" + account, (m) => {
+            // a resting order filled or was rejected by the engine, not by this tab
+            const change = JSON.parse(m.body);
+            if (change.status !== "OPEN")
+              setNotice(
+                "Order #" +
+                  change.orderId +
+                  " · " +
+                  change.status.toLowerCase(),
+              );
+            refresh().catch(() => {});
+          });
       },
       onWebSocketClose: () => setConnected(false),
       onStompError: () => setConnected(false),
