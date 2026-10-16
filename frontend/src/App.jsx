@@ -287,7 +287,7 @@ export default function App() {
     <>
       <div className="account-intro">
         <span className="eyebrow">PRACTICE ACCOUNT</span>
-        <h2>Your capital. Zero risk.</h2>
+        <h2>Open a practice account</h2>
         <p>Start with $100,000 in simulated buying power.</p>
       </div>
       <div className="account-forms">
@@ -943,7 +943,7 @@ export default function App() {
             </section>
             <section className="leaderboard panel">
               <div className="panel-heading">
-                <h2>Top traders</h2>
+                <h2>Leaderboard</h2>
                 <span className="muted">RETURN</span>
               </div>
               {leaders.slice(0, 4).map((l, i) => (

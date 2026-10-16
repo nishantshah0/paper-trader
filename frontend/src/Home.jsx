@@ -315,8 +315,8 @@ export default function Home() {
           <div className="broker-section">
             <div className="section-heading-row">
               <div>
-                <span className="home-eyebrow">TRADING PLATFORM</span>
-                <h2>The tools to manage every trade.</h2>
+                <span className="home-eyebrow">HOW IT WORKS</span>
+                <h2>What happens when you place an order.</h2>
               </div>
               <a href="/terminal" className="home-text-link">
                 View the terminal
@@ -326,18 +326,18 @@ export default function Home() {
             <div className="broker-features">
               {[
                 [
-                  "Charts and watchlists",
-                  "Follow observed price movements, compare instruments, and switch directly from the watchlist to your order ticket.",
+                  "Limit order matching",
+                  "Open limit orders are checked against the latest quote every second, oldest first. A buy fills at or below its limit, a sell at or above it.",
                   "chart",
                 ],
                 [
-                  "Order management",
-                  "Execute at the current quote or specify a limit price. Review, track, and cancel open orders from one place.",
+                  "One transaction per fill",
+                  "Cash, the position, the order and the trade record change together or not at all, under a row lock on the account.",
                   "activity",
                 ],
                 [
-                  "Portfolio reporting",
-                  "See your available cash, positions, and realized and unrealized P&L, with a complete execution history.",
+                  "Pushed after commit",
+                  "Quotes and fills reach every open tab over a STOMP WebSocket, sent only once the database transaction has committed.",
                   "wallet",
                 ],
               ].map(([title, text, icon]) => (
