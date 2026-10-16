@@ -327,7 +327,7 @@ export default function Home() {
               {[
                 [
                   "Limit order matching",
-                  "Open limit orders are checked against the latest quote every second, oldest first. A buy fills at or below its limit, a sell at or above it.",
+                  "Resting orders sit in an in-memory book per symbol. Each new quote fills the ones it crosses, best price first, then oldest first.",
                   "chart",
                 ],
                 [

@@ -6,8 +6,12 @@
 Demo generator or Finnhub quote API
                  |
              QuoteCache ---------> STOMP /topic/quotes
-                 |
-  REST ----> OrderService <---- scheduled MatchingEngine
+                 |  quote event
+                 v
+          MatchingEngine: one OrderBook per symbol (in memory)
+                 |  crossed order IDs
+                 v
+  REST ----> OrderService
                  |
        account row lock + transaction
                  |
@@ -20,13 +24,26 @@ Demo generator or Finnhub quote API
 
 QuoteCache keeps an immutable snapshot of at most 240 observed quotes per symbol. The REST history endpoint hydrates charts after a browser refresh. Older updates are ignored, equal-timestamp updates replace the last sample, and live-mode seed prices are excluded. This bounded memory buffer resets on server restart.
 
-The quote feed and matcher use Spring's scheduler. They run independently of browser connections. Each candidate match invokes a separate proxied transactional service call; a failure for one account does not stop the remaining candidates.
+The quote feed runs on Spring's scheduler, independently of browser connections. Every quote it publishes reaches the matching engine as an application event on the feed thread. Each crossed order is filled through its own transactional service call, so a failure for one account does not stop the rest.
 
-## Why a database-backed book
+## The order book
 
-The initial roadmap proposed an in-memory order book. For a small simulator, the existing partial index on open orders plus a fresh query each second is simpler to recover and reason about. The database remains the only authoritative order state. An application restart resumes matching existing OPEN orders; no cache hydration or after-commit insertion race is possible.
+Resting limit orders live in memory, one `OrderBook` per symbol. Each side is a `TreeMap` from price to a FIFO queue: bids sorted highest first, asks lowest first. A quote at price P pops every bid at or above P and every ask at or below P, best price first and oldest first within a price, and stops at the first level that does not cross. That costs O(log n) per touched level instead of a scan of every open order. A hash map from order ID to entry makes cancels O(log n) as well.
 
-This is not intended for exchange-scale throughput. A larger system would page/batch candidates, partition symbols, introduce a durable quote/event stream, and define fairness and reservation rules explicitly.
+Why a sorted map and not a heap: a heap gives the best price cheaply but cancelling from the middle is O(n), and walking several crossed levels means repeated pops. The sorted map does both directly.
+
+Each book has its own lock. The feed thread holds it only while popping crossed orders, never during the database fill, so placements and cancels for that symbol are never stuck behind a fill, and other symbols never wait at all.
+
+### Postgres stays the record
+
+The book is an index of which orders might fill; it never decides that one does. `OrderService.match` takes the account row lock, re-reads the order, and fills only if it is still OPEN and the current quote still crosses. That one rule settles the races:
+
+- **Feed vs cancel.** If a cancel commits after the order was popped, match sees CANCELLED and does nothing. If the cancel commits first, its after-commit event removes the order from the book.
+- **Placement vs quote.** An order joins the book only after its transaction commits, then is checked against the current quote straight away, so a quote that arrived in between is not missed.
+- **Failed fill.** If match throws, or the quote is too old to trade, the order goes back in the book for the next quote. A stale entry that slips back in after a cancel is harmless, because match re-checks status.
+- **Restart.** On startup the books are rebuilt from OPEN rows (backed by a partial index) and checked against the cached quotes.
+
+This is not built for exchange-scale throughput. A larger system would partition symbols across threads or nodes, use a durable event stream for quotes and order changes, and define fairness and reservation rules explicitly.
 
 ## Transactions and races
 

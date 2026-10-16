@@ -44,7 +44,7 @@ docker compose --profile app down
 
 ## Execution rules
 
-A market order fills at the cached quote. A buy limit fills at or below its limit; a sell limit fills at or above it. Marketable limits execute immediately; the scheduler checks resting orders every second.
+A market order fills at the cached quote. A buy limit fills at or below its limit; a sell limit fills at or above it. Marketable limits execute immediately. Resting limits wait in an in-memory order book per symbol, and every new quote fills the ones it crosses. See [docs/architecture.md](docs/architecture.md) for the book and its race handling.
 
 Fills are whole-order, whole-share, and long-only. Open orders do **not** reserve cash or shares. Placement checks resources, and execution checks again. A resting order that becomes unfunded is marked `REJECTED` without a trade or balance change.
 
