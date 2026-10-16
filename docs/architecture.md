@@ -49,6 +49,8 @@ This is not built for exchange-scale throughput. A larger system would partition
 
 Every placement, fill, and cancellation locks the account row first, then reads current order/position state. That shared lock order serializes competing operations on one account. Two workers seeing the same open order cannot both fill it: the second obtains the lock only after the first commits and then observes a terminal status.
 
+Accounts also carry a `@Version` column. With the row lock in place it never conflicts; it exists so that any future write path that forgets the lock fails with an optimistic-lock error instead of silently overwriting a balance.
+
 Fills change cash, position, order status, and the trade row in one transaction. A unique trade/order index is a database backstop. Portfolio and leaderboard reads use repeatable-read transactions to avoid mixing balances and positions from different commits.
 
 Open limit orders do not reserve buying power or inventory. This is an explicit simplification. A resting order can become unfunded before a crossing; it transitions to REJECTED. Market-order failures roll back the new order entirely.

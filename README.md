@@ -6,10 +6,14 @@ A local paper-trading simulator with a React terminal, a Spring Boot execution e
 
 **No real money or brokerage connection.** The default feed generates simulated prices. Optional Finnhub mode uses provider quotes and refuses execution against stale prices. Practice accounts are shared and unauthenticated; this project is intended for local use.
 
-![PaperTrader home page](docs/home.png)
+![A resting limit order filling on its own as the price drops](docs/dashboard.gif)
+
+A buy limit for 10 AAPL at $232.15 rests in the order book until the simulated price falls through it, then fills without another request. Cash, P&L, positions and trade history update over the WebSocket.
 
 <details>
-<summary>Trading terminal</summary>
+<summary>Home page and terminal screenshots</summary>
+
+![PaperTrader home page](docs/home.png)
 
 ![PaperTrader trading terminal](docs/dashboard.png)
 
@@ -141,6 +145,14 @@ STOMP endpoint: `/ws`. Subscribe to `/topic/quotes` and `/topic/accounts/{id}`. 
 ## Limitations
 
 There is no authentication or account-level authorization. Account IDs are not passwords. Add an identity and authorization layer before public deployment. Corporate actions, exchange calendars, persistent historical prices, and distributed messaging are outside this demo. The leaderboard scans accounts, and order lists are unpaginated; this is designed for a small local practice environment.
+
+## What I would do next
+
+- **Reserve buying power for open orders.** Resting orders do not hold cash or shares today, so an order can be accepted and later rejected as unfunded. Reserving at placement would make that impossible.
+- **Partial fills.** Orders fill all or nothing at the quote. Real books fill against available size and leave the remainder resting.
+- **One matcher per symbol.** Matching runs on the feed thread. Handing each symbol to its own single-threaded executor would let symbols match in parallel while keeping per-symbol ordering.
+- **Persist quote history.** Chart history lives in memory and resets on restart.
+- **Authentication.** Accounts are open by ID, which is fine locally and not for a public deployment.
 
 ## Contributing
 
