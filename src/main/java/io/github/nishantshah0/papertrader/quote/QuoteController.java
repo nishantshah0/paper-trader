@@ -2,6 +2,7 @@ package io.github.nishantshah0.papertrader.quote;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +19,7 @@ class QuoteController {
     }
 
     @GetMapping("/status")
-    java.util.Map<String, String> status() { return java.util.Map.of("mode", quotes.mode()); }
+    Map<String, String> status() { return Map.of("mode", quotes.mode()); }
 
     @GetMapping
     List<Quote> all() {
@@ -26,7 +27,7 @@ class QuoteController {
     }
 
     @GetMapping("/history")
-    java.util.Map<String, List<Quote>> history() { return quotes.history(); }
+    Map<String, List<Quote>> history() { return quotes.history(); }
 
     @GetMapping("/{symbol}")
     Quote one(@PathVariable String symbol) {

@@ -1,7 +1,12 @@
 package io.github.nishantshah0.papertrader;
 
 import static org.assertj.core.api.Assertions.*;
+
+import io.github.nishantshah0.papertrader.quote.Quote;
+import io.github.nishantshah0.papertrader.quote.QuoteCache;
 import io.github.nishantshah0.papertrader.trading.*;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,9 +47,9 @@ class OrderConcurrencyTest extends ApiTestSupport {
 
     @Test void cancellationRacingWithMatchHasOnlyOneOutcome() throws Exception {
         var a = createAccount();
-        var order = service.place(a.id(), new PlaceOrderRequest("AAPL", OrderSide.BUY, OrderType.LIMIT, 1, new java.math.BigDecimal("90")));
+        var order = service.place(a.id(), new PlaceOrderRequest("AAPL", OrderSide.BUY, OrderType.LIMIT, 1, new BigDecimal("90")));
         var quotes = this.quotesForTest;
-        quotes.update(new io.github.nishantshah0.papertrader.quote.Quote("AAPL", new java.math.BigDecimal("80"), java.time.Instant.now()));
+        quotes.update(new Quote("AAPL", new BigDecimal("80"), Instant.now()));
         try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
             var start = new CountDownLatch(1);
             var match = pool.submit(() -> { start.await(); service.match(a.id(), order.getId()); return true; });
@@ -55,8 +60,8 @@ class OrderConcurrencyTest extends ApiTestSupport {
             assertThat(service.trades(a.id())).hasSize(status == OrderStatus.FILLED ? 1 : 0);
             assertThat(portfolio(a).cash()).isEqualByComparingTo(status == OrderStatus.FILLED ? "920" : "1000");
         } finally {
-            quotes.update(new io.github.nishantshah0.papertrader.quote.Quote("AAPL", new java.math.BigDecimal("100"), java.time.Instant.now()));
+            quotes.update(new Quote("AAPL", new BigDecimal("100"), Instant.now()));
         }
     }
-    @Autowired io.github.nishantshah0.papertrader.quote.QuoteCache quotesForTest;
+    @Autowired QuoteCache quotesForTest;
 }

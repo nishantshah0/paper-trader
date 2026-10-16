@@ -1,7 +1,10 @@
 package io.github.nishantshah0.papertrader.quote;
 
 import io.github.nishantshah0.papertrader.PaperTraderProperties;
+import io.github.nishantshah0.papertrader.trading.OrderRejectedException;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -9,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 // Latest quote and a bounded history of observed prices for the terminal chart.
@@ -22,7 +26,7 @@ public class QuoteCache {
     private final String mode;
 
     public QuoteCache(PaperTraderProperties properties,
-            @org.springframework.beans.factory.annotation.Value("${papertrader.feed.mode:demo}") String mode) {
+            @Value("${papertrader.feed.mode:demo}") String mode) {
         this.mode = mode;
         Instant now = mode.equals("finnhub") ? Instant.EPOCH : Instant.now();
         properties.seedQuotes().forEach((symbol, price) -> {
@@ -42,16 +46,23 @@ public class QuoteCache {
     }
 
     public void update(Quote quote) {
-        if (quote.price() == null || quote.price().signum() <= 0 || quote.price().compareTo(new java.math.BigDecimal("9999999999")) > 0
-                || quote.asOf() == null || quote.asOf().isAfter(Instant.now().plusSeconds(30))) {
+        boolean badPrice = quote.price() == null || quote.price().signum() <= 0
+                || quote.price().compareTo(new BigDecimal("9999999999")) > 0;
+        boolean badTime = quote.asOf() == null || quote.asOf().isAfter(Instant.now().plusSeconds(30));
+        if (badPrice || badTime) {
             throw new IllegalArgumentException("invalid quote");
         }
         quotes.compute(quote.symbol(), (symbol, previous) -> {
-            if (previous != null && quote.asOf().isBefore(previous.asOf())) return previous;
-            var samples = new java.util.ArrayList<>(history.getOrDefault(symbol, List.of()));
-            if (!samples.isEmpty() && samples.getLast().asOf().equals(quote.asOf())) samples.removeLast();
+            if (previous != null && quote.asOf().isBefore(previous.asOf())) {
+                return previous; // out of order, keep the newer quote
+            }
+            var samples = new ArrayList<>(history.getOrDefault(symbol, List.of()));
+            if (!samples.isEmpty() && samples.getLast().asOf().equals(quote.asOf())) {
+                samples.removeLast();
+            }
             samples.add(quote);
-            history.put(symbol, List.copyOf(samples.subList(Math.max(0, samples.size() - HISTORY_LIMIT), samples.size())));
+            int from = Math.max(0, samples.size() - HISTORY_LIMIT);
+            history.put(symbol, List.copyOf(samples.subList(from, samples.size())));
             return quote;
         });
     }
@@ -65,7 +76,9 @@ public class QuoteCache {
     }
 
     public void requireTradable(Quote quote) {
-        if (!isTradable(quote)) throw new io.github.nishantshah0.papertrader.trading.OrderRejectedException("quote is stale; wait for a fresh market quote");
+        if (!isTradable(quote)) {
+            throw new OrderRejectedException("quote is stale; wait for a fresh market quote");
+        }
     }
 
     public String mode() { return mode; }

@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +22,10 @@ public class OrderService {
     private final TradeRepository trades;
     private final PositionRepository positions;
     private final QuoteCache quotes;
-    private final org.springframework.context.ApplicationEventPublisher events;
+    private final ApplicationEventPublisher events;
 
     OrderService(AccountRepository accounts, OrderRepository orders, TradeRepository trades,
-            PositionRepository positions, QuoteCache quotes, org.springframework.context.ApplicationEventPublisher events) {
+            PositionRepository positions, QuoteCache quotes, ApplicationEventPublisher events) {
         this.accounts = accounts;
         this.orders = orders;
         this.trades = trades;
@@ -45,10 +46,14 @@ public class OrderService {
         Account account = accounts.findByIdForUpdate(accountId)
                 .orElseThrow(() -> new NotFoundException("account " + accountId + " not found"));
         if (key != null) {
-            if (key.isBlank() || key.length() > 128) throw new OrderRejectedException("Idempotency-Key must contain 1 to 128 characters");
+            if (key.isBlank() || key.length() > 128) {
+                throw new OrderRejectedException("Idempotency-Key must contain 1 to 128 characters");
+            }
             var previous = orders.findByAccountIdAndIdempotencyKey(accountId, key);
             if (previous.isPresent()) {
-                if (!previous.get().sameRequest(request)) throw new OrderStateException("Idempotency-Key was already used for a different order");
+                if (!previous.get().sameRequest(request)) {
+                    throw new OrderStateException("Idempotency-Key was already used for a different order");
+                }
                 return previous.get();
             }
         }
@@ -78,9 +83,13 @@ public class OrderService {
     public OrderStatus match(Long accountId, Long orderId) {
         Account account = accounts.findByIdForUpdate(accountId).orElseThrow();
         Order order = find(accountId, orderId);
-        if (!order.isOpen()) return order.getStatus();
+        if (!order.isOpen()) {
+            return order.getStatus(); // cancelled or filled since it was queued
+        }
         Quote quote = quotes.get(order.getSymbol()).orElse(null);
-        if (quote == null || !quotes.isTradable(quote) || !order.crosses(quote.price())) return order.getStatus();
+        if (quote == null || !quotes.isTradable(quote) || !order.crosses(quote.price())) {
+            return order.getStatus();
+        }
         try {
             checkResources(account, order, quote.price());
         } catch (OrderRejectedException e) {

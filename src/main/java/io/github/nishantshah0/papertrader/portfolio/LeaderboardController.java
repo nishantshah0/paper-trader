@@ -4,19 +4,21 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.List;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 class LeaderboardController {
     private final AccountRepository accounts;
     private final PortfolioService portfolios;
     LeaderboardController(AccountRepository accounts, PortfolioService portfolios) {
-        this.accounts = accounts; this.portfolios = portfolios;
+        this.accounts = accounts;
+        this.portfolios = portfolios;
     }
     public record Entry(Long accountId, String username, BigDecimal totalValue, BigDecimal returnPercent) {}
     @GetMapping("/api/leaderboard")
-    @Transactional(readOnly = true, isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public List<Entry> leaderboard() {
         return accounts.findAll().stream().map(a -> portfolios.portfolio(a.getId()))
                 .map(p -> new Entry(p.accountId(), p.username(), p.totalValue(),
