@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -32,6 +33,12 @@ public class Account {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    // every order path locks the account row first, so this never fires today. it is the
+    // backstop for any future write that forgets to: a stale update fails instead of
+    // silently overwriting cash
+    @Version
+    private long version;
 
     protected Account() {
     }
