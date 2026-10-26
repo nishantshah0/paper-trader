@@ -53,3 +53,8 @@ desktop.ini
 # Browser test artifacts
 frontend/test-results/
 frontend/playwright-report/
+
+# Cypress run artifacts
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+frontend/cypress/downloads/
