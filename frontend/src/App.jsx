@@ -280,8 +280,10 @@ export default function App() {
   const estimate =
     Number(quantity) *
     (type === "LIMIT" ? Number(limit) : Number(selected?.price || 0));
+  // shares not already promised to an open sell limit
   const held =
-    portfolio?.positions.find((p) => p.symbol === symbol)?.quantity || 0;
+    portfolio?.positions.find((p) => p.symbol === symbol)?.availableQuantity ||
+    0;
   const modeLabel =
     mode === "finnhub"
       ? "LIVE QUOTES"
@@ -410,7 +412,7 @@ export default function App() {
         <section className="account-strip" aria-label="Portfolio summary">
           {[
             ["Total equity", portfolio?.totalValue, "USD"],
-            ["Buying power", portfolio?.cash, "AVAILABLE"],
+            ["Buying power", portfolio?.buyingPower, "AVAILABLE"],
             ["Unrealized P&L", portfolio?.unrealizedPnl, "OPEN POSITIONS"],
             ["Realized P&L", portfolio?.realizedPnl, "CLOSED TRADES"],
           ].map(([label, value, hint], i) => (
@@ -924,7 +926,7 @@ export default function App() {
                     <b>
                       {side === "BUY"
                         ? portfolio
-                          ? money(portfolio.cash)
+                          ? money(portfolio.buyingPower)
                           : "—"
                         : held}
                     </b>

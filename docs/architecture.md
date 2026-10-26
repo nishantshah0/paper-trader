@@ -53,7 +53,7 @@ Accounts also carry a `@Version` column. With the row lock in place it never con
 
 Fills change cash, position, order status, and the trade row in one transaction. A unique trade/order index is a database backstop. Portfolio and leaderboard reads use repeatable-read transactions to avoid mixing balances and positions from different commits.
 
-Open limit orders do not reserve buying power or inventory. This is an explicit simplification. A resting order can become unfunded before a crossing; it transitions to REJECTED. Market-order failures roll back the new order entirely.
+Open limit orders reserve buying power and inventory. The holds are not stored: placement reads the account's OPEN orders under the account row lock and subtracts their buy notionals (at the limit price) from cash and their sell quantities from shares. Because every placement takes the same lock, two orders cannot both claim the same cash. A buy reserves at its limit and fills at or below it, so its hold always covers the fill; the execution-time check remains for orders placed before reservations existed, which still become REJECTED if unfunded. Market-order failures roll back the new order entirely.
 
 Orders execute all-or-nothing at the current quote, even if its price improves on the limit. There are no partial fills or user-to-user matching. Notional values round half up to cents; prices and average cost use four decimals.
 

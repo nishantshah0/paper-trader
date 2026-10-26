@@ -45,6 +45,23 @@ class OrderConcurrencyTest extends ApiTestSupport {
         assertThat(portfolio(a).cash()).isEqualByComparingTo("300");
     }
 
+    @Test void concurrentRestingBuysCannotHoldTheSameCash() throws Exception {
+        var a = createAccount();
+        var limit = new PlaceOrderRequest("AAPL", OrderSide.BUY, OrderType.LIMIT, 6, new BigDecimal("90"));
+        try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            var start = new CountDownLatch(1);
+            Callable<Boolean> task = () -> {
+                start.await();
+                try { service.place(a.id(), limit); return true; }
+                catch (OrderRejectedException expected) { return false; }
+            };
+            var first = pool.submit(task); var second = pool.submit(task); start.countDown();
+            assertThat(first.get(10, TimeUnit.SECONDS) ^ second.get(10, TimeUnit.SECONDS)).isTrue();
+        }
+        assertThat(service.list(a.id(), OrderStatus.OPEN)).hasSize(1);
+        assertThat(portfolio(a).reservedCash()).isEqualByComparingTo("540");
+    }
+
     @Test void cancellationRacingWithMatchHasOnlyOneOutcome() throws Exception {
         var a = createAccount();
         var order = service.place(a.id(), new PlaceOrderRequest("AAPL", OrderSide.BUY, OrderType.LIMIT, 1, new BigDecimal("90")));

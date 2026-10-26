@@ -50,7 +50,7 @@ docker compose --profile app down
 
 A market order fills at the cached quote. A buy limit fills at or below its limit; a sell limit fills at or above it. Marketable limits execute immediately. Resting limits wait in an in-memory order book per symbol, and every new quote fills the ones it crosses. See [docs/architecture.md](docs/architecture.md) for the book and its race handling.
 
-Fills are whole-order, whole-share, and long-only. Open orders do **not** reserve cash or shares. Placement checks resources, and execution checks again. A resting order that becomes unfunded is marked `REJECTED` without a trade or balance change.
+Fills are whole-order, whole-share, and long-only. Open limit orders reserve what they need: a buy holds its limit price times quantity, a sell holds its shares. A new order can only use buying power and shares that are not already held, so a resting order stays funded until it fills or is cancelled. A buy that fills below its limit frees the difference. Execution still re-checks the balance under the account lock.
 
 The account row lock serializes placement, matching, and cancellation. Cash, positions, order status, and the trade row commit together. Postgres is the order book; a unique constraint prevents duplicate fills. Reusing an `Idempotency-Key` with the same account and payload returns the original order; a changed payload returns 409.
 
@@ -148,7 +148,6 @@ There is no authentication or account-level authorization. Account IDs are not p
 
 ## What I would do next
 
-- **Reserve buying power for open orders.** Resting orders do not hold cash or shares today, so an order can be accepted and later rejected as unfunded. Reserving at placement would make that impossible.
 - **Partial fills.** Orders fill all or nothing at the quote. Real books fill against available size and leave the remainder resting.
 - **One matcher per symbol.** Matching runs on the feed thread. Handing each symbol to its own single-threaded executor would let symbols match in parallel while keeping per-symbol ordering.
 - **Persist quote history.** Chart history lives in memory and resets on restart.

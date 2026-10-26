@@ -5,8 +5,11 @@ import io.github.nishantshah0.papertrader.account.AccountService;
 import io.github.nishantshah0.papertrader.portfolio.PortfolioResponse.PositionView;
 import io.github.nishantshah0.papertrader.quote.Quote;
 import io.github.nishantshah0.papertrader.quote.QuoteCache;
+import io.github.nishantshah0.papertrader.trading.OrderRepository;
+import io.github.nishantshah0.papertrader.trading.OrderStatus;
 import io.github.nishantshah0.papertrader.trading.Position;
 import io.github.nishantshah0.papertrader.trading.PositionRepository;
+import io.github.nishantshah0.papertrader.trading.Reservations;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -22,17 +25,22 @@ public class PortfolioService {
 
     private final AccountService accounts;
     private final PositionRepository positions;
+    private final OrderRepository orders;
     private final QuoteCache quotes;
 
-    PortfolioService(AccountService accounts, PositionRepository positions, QuoteCache quotes) {
+    PortfolioService(AccountService accounts, PositionRepository positions, OrderRepository orders,
+            QuoteCache quotes) {
         this.accounts = accounts;
         this.positions = positions;
+        this.orders = orders;
         this.quotes = quotes;
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PortfolioResponse portfolio(Long accountId) {
         Account account = accounts.get(accountId);
+        Reservations reserved = Reservations.of(
+                orders.findByAccountIdAndStatusOrderByCreatedAtDesc(accountId, OrderStatus.OPEN));
         List<PositionView> views = new ArrayList<>();
         BigDecimal marketValue = ZERO;
         BigDecimal unrealized = ZERO;
@@ -48,12 +56,14 @@ public class PortfolioService {
             BigDecimal pnl = position.unrealizedPnl(last);
             marketValue = marketValue.add(value);
             unrealized = unrealized.add(pnl);
-            views.add(new PositionView(position.getSymbol(), position.getQuantity(), position.getAvgCost(), last,
-                    value, pnl, position.getRealizedPnl()));
+            int available = Math.max(position.getQuantity() - reserved.shares(position.getSymbol()), 0);
+            views.add(new PositionView(position.getSymbol(), position.getQuantity(), available,
+                    position.getAvgCost(), last, value, pnl, position.getRealizedPnl()));
         }
         BigDecimal totalValue = account.getCash().add(marketValue);
+        BigDecimal buyingPower = account.getCash().subtract(reserved.cash()).max(ZERO);
         return new PortfolioResponse(account.getId(), account.getUser().getUsername(), account.getCash(),
-                account.getStartingCash(), marketValue, totalValue, unrealized, realized,
-                totalValue.subtract(account.getStartingCash()), views);
+                reserved.cash(), buyingPower, account.getStartingCash(), marketValue, totalValue, unrealized,
+                realized, totalValue.subtract(account.getStartingCash()), views);
     }
 }

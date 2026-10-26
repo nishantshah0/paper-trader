@@ -66,7 +66,10 @@ public class OrderService {
         Order order = request.typeOrMarket() == OrderType.LIMIT
                 ? Order.limit(accountId, symbol, request.side(), request.quantity(), request.limitPrice())
                 : Order.market(accountId, symbol, request.side(), request.quantity());
-        checkResources(account, order, order.getType() == OrderType.LIMIT ? order.getLimitPrice() : quote.price());
+        Reservations reserved = Reservations.of(
+                orders.findByAccountIdAndStatusOrderByCreatedAtDesc(accountId, OrderStatus.OPEN));
+        checkAvailable(account, order, order.getType() == OrderType.LIMIT ? order.getLimitPrice() : quote.price(),
+                reserved);
         order.setIdempotencyKey(key);
         orders.save(order);
         quotes.requireTradable(quote);
@@ -102,8 +105,29 @@ public class OrderService {
         return order.getStatus();
     }
 
-    // Open orders do not reserve cash/shares. Revalidate under the same account lock
-    // at execution; an unfunded resting order becomes REJECTED without a trade.
+    // A new order may only use what open limit orders have not already claimed, so a
+    // resting order stays funded until it fills or is cancelled. Buys reserve at their
+    // limit and fill at or below it, which means the hold always covers the fill.
+    private void checkAvailable(Account account, Order order, BigDecimal price, Reservations reserved) {
+        BigDecimal cost = price.multiply(BigDecimal.valueOf(order.getQuantity())).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal buyingPower = account.getCash().subtract(reserved.cash());
+        if (order.getSide() == OrderSide.BUY && buyingPower.compareTo(cost) < 0) {
+            throw new OrderRejectedException("insufficient cash: order needs " + cost + ", buying power is "
+                    + buyingPower.max(BigDecimal.ZERO) + " after open orders");
+        }
+        int held = positions.findByAccountIdAndSymbol(order.getAccountId(), order.getSymbol())
+                .map(Position::getQuantity).orElse(0);
+        int free = held - reserved.shares(order.getSymbol());
+        if (order.getSide() == OrderSide.SELL && free < order.getQuantity()) {
+            throw new OrderRejectedException("insufficient shares: order sells " + order.getQuantity() + " "
+                    + order.getSymbol() + ", " + Math.max(free, 0) + " not already on open orders");
+        }
+        checkResources(account, order, price);
+    }
+
+    // Execution re-checks the balance itself under the same account lock. With
+    // reservations this should always pass; it still guards orders placed before
+    // reservations existed, which become REJECTED without a trade if unfunded.
     private void checkResources(Account account, Order order, BigDecimal price) {
         BigDecimal cost = price.multiply(BigDecimal.valueOf(order.getQuantity())).setScale(2, RoundingMode.HALF_UP);
         if (order.getSide() == OrderSide.BUY && !account.canAfford(cost)) {
