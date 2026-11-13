@@ -72,8 +72,13 @@ public class OrderService {
                 reserved);
         order.setIdempotencyKey(key);
         orders.save(order);
-        quotes.requireTradable(quote);
-        if (order.crosses(quote.price())) fill(account, order, quote.price());
+        // only an order that executes now needs a fresh price. a limit that does not
+        // cross can rest on a stale quote, e.g. outside market hours; match() refuses
+        // stale quotes again before it fills
+        if (order.crosses(quote.price())) {
+            quotes.requireTradable(quote);
+            fill(account, order, quote.price());
+        }
         events.publishEvent(new OrderChanged(accountId, order.getId(), order.getStatus()));
         return order;
     }
