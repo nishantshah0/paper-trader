@@ -67,7 +67,7 @@ The browser retains a failed request's key until that payload changes or succeed
 
 - Demo: deterministic bounded price oscillations around configured seed prices, every 15 seconds. Clearly labeled simulated prices.
 - Static: unchanged configured prices, used by integration tests.
-- Finnhub: server-side HTTP requests with five-second connection/read timeouts. Seeds have an epoch timestamp and are never executable. Invalid, future-dated, or out-of-order quotes cannot replace good data. Quotes older than 120 seconds cannot execute.
+- Finnhub: server-side HTTP requests with five-second connection/read timeouts. Seeds have an epoch timestamp and are never executable. Invalid, future-dated, or out-of-order quotes cannot replace good data. Quotes older than 120 seconds cannot execute. A limit order that does not cross can still be placed against a stale quote: it rests and fills on the first fresh quote that crosses it.
 
 Provider failures log only the symbol and exception class, retaining the last good data. The browser displays quote timestamps. Credentials are environment configuration and are never sent to the browser. Actual Finnhub account access is not exercised by CI.
 

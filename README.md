@@ -74,7 +74,7 @@ FEED_INTERVAL_MS=15000
 
 Recreate the app with the Quick start Compose command. Keys remain server-side. The adapter calls [Finnhub's quote endpoint](https://finnhub.io/docs/api/quote); twelve symbols at the default interval use up to 48 requests per minute. Set the interval to fit your provider plan.
 
-Live mode never executes against seed prices. Provider timestamps must be within the last 120 seconds. Errors retain the last quote, but stale prices cannot execute orders, including outside market hours. Automated tests do not contact Finnhub.
+Live mode never executes against seed prices. Provider timestamps must be within the last 120 seconds. Errors retain the last quote, but stale prices cannot execute orders, including outside market hours. Limit orders that would not fill yet can still be placed; they rest until a fresh quote crosses them. Automated tests do not contact Finnhub.
 
 ## Development
 
