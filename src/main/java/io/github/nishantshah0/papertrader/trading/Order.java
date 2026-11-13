@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 
 @Entity
@@ -45,6 +46,12 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 9)
     private OrderStatus status;
+
+    @Column(name = "filled_quantity", nullable = false)
+    private int filledQuantity;
+
+    @Column(name = "avg_fill_price", precision = 18, scale = 4)
+    private BigDecimal avgFillPrice;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -88,8 +95,27 @@ public class Order {
         return status == OrderStatus.OPEN;
     }
 
-    public void fill() {
-        transition(OrderStatus.FILLED);
+    public int remainingQuantity() {
+        return quantity - filledQuantity;
+    }
+
+    // one execution of part or all of what is left. the order stays OPEN until nothing
+    // remains, and the average price is weighted by the shares in each fill
+    public void fill(int shares, BigDecimal price) {
+        if (!isOpen() || shares <= 0 || shares > remainingQuantity()) {
+            throw new IllegalStateException("order " + id + " cannot fill " + shares + " of "
+                    + remainingQuantity() + " remaining (" + status + ")");
+        }
+        BigDecimal filledValue = avgFillPrice == null ? BigDecimal.ZERO
+                : avgFillPrice.multiply(BigDecimal.valueOf(filledQuantity));
+        filledQuantity += shares;
+        avgFillPrice = filledValue.add(price.multiply(BigDecimal.valueOf(shares)))
+                .divide(BigDecimal.valueOf(filledQuantity), 4, RoundingMode.HALF_UP);
+        if (filledQuantity == quantity) {
+            transition(OrderStatus.FILLED);
+        } else {
+            updatedAt = Instant.now();
+        }
     }
 
     public void cancel() {
@@ -143,6 +169,14 @@ public class Order {
 
     public OrderStatus getStatus() {
         return status;
+    }
+
+    public int getFilledQuantity() {
+        return filledQuantity;
+    }
+
+    public BigDecimal getAvgFillPrice() {
+        return avgFillPrice;
     }
 
     public Instant getCreatedAt() {

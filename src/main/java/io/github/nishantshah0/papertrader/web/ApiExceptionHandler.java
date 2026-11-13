@@ -3,6 +3,7 @@ package io.github.nishantshah0.papertrader.web;
 import io.github.nishantshah0.papertrader.NotFoundException;
 import io.github.nishantshah0.papertrader.account.UsernameTakenException;
 import io.github.nishantshah0.papertrader.quote.UnknownSymbolException;
+import io.github.nishantshah0.papertrader.trading.EngineBusyException;
 import io.github.nishantshah0.papertrader.trading.OrderRejectedException;
 import io.github.nishantshah0.papertrader.trading.OrderStateException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,6 +28,11 @@ class ApiExceptionHandler {
     @ExceptionHandler({OrderStateException.class, UsernameTakenException.class})
     ProblemDetail conflict(RuntimeException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(EngineBusyException.class)
+    ProblemDetail busy(EngineBusyException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
     }
 
     // unique constraint backstop, e.g. two requests racing to create the same username

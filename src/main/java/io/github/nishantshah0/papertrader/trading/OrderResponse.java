@@ -4,11 +4,12 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record OrderResponse(Long id, Long accountId, String symbol, OrderSide side, OrderType type, int quantity,
-        BigDecimal limitPrice, OrderStatus status, Instant createdAt, Instant updatedAt) {
+        int filledQuantity, BigDecimal limitPrice, BigDecimal avgFillPrice, OrderStatus status, Instant createdAt,
+        Instant updatedAt) {
 
     public static OrderResponse from(Order order) {
         return new OrderResponse(order.getId(), order.getAccountId(), order.getSymbol(), order.getSide(),
-                order.getType(), order.getQuantity(), order.getLimitPrice(), order.getStatus(),
-                order.getCreatedAt(), order.getUpdatedAt());
+                order.getType(), order.getQuantity(), order.getFilledQuantity(), order.getLimitPrice(),
+                order.getAvgFillPrice(), order.getStatus(), order.getCreatedAt(), order.getUpdatedAt());
     }
 }

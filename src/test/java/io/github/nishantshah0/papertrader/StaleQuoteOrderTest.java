@@ -18,8 +18,8 @@ import org.springframework.http.HttpStatus;
 // timestamp: the same position as outside market hours or just after startup. The
 // tests never contact Finnhub. AAPL stays stale throughout; MSFT gets fresh quotes.
 @SpringBootTest(properties = {
-        "papertrader.engine.enabled=false",
         "papertrader.feed.mode=finnhub",
+        "papertrader.house.spread-bps=0",
         "papertrader.feed.api-key=test-key-not-used",
         "papertrader.feed.initial-delay-ms=3600000",
         "papertrader.feed.interval-ms=3600000",
@@ -36,20 +36,28 @@ class StaleQuoteOrderTest extends ApiTestSupport {
     QuoteCache quotes;
 
     @Test
-    void ordersThatWouldFillNowAreRefusedOnAStaleQuote() throws Exception {
+    void marketOrdersAreRefusedOnAStaleQuote() throws Exception {
         var account = createAccount();
 
         var market = post(orders(account), "{\"symbol\":\"AAPL\",\"side\":\"BUY\",\"quantity\":1}");
         assertThat(market).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(detail(market)).contains("stale");
 
-        // a buy limit above the last price is marketable, so it would execute now
-        var marketableLimit = post(orders(account),
-                "{\"symbol\":\"AAPL\",\"side\":\"BUY\",\"type\":\"LIMIT\",\"quantity\":1,\"limitPrice\":110}");
-        assertThat(marketableLimit).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
-
         assertThat(service.list(account.id(), null)).isEmpty();
         assertThat(portfolio(account).cash()).isEqualByComparingTo("1000");
+    }
+
+    @Test
+    void aLimitThroughAStaleQuoteRestsInsteadOfTradingWithTheHouse() throws Exception {
+        var account = createAccount();
+
+        // above the last price, but the house is out until a fresh quote arrives
+        var placed = post(orders(account),
+                "{\"symbol\":\"AAPL\",\"side\":\"BUY\",\"type\":\"LIMIT\",\"quantity\":1,\"limitPrice\":110}");
+        assertThat(placed).hasStatus(HttpStatus.CREATED);
+        assertThat(read(placed, OrderResponse.class).status()).isEqualTo(OrderStatus.OPEN);
+        assertThat(service.trades(account.id())).isEmpty();
+        assertThat(portfolio(account).reservedCash()).isEqualByComparingTo("110");
     }
 
     @Test

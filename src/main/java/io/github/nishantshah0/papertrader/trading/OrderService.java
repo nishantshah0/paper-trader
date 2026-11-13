@@ -1,192 +1,59 @@
 package io.github.nishantshah0.papertrader.trading;
 
 import io.github.nishantshah0.papertrader.NotFoundException;
-import io.github.nishantshah0.papertrader.account.Account;
 import io.github.nishantshah0.papertrader.account.AccountRepository;
-import io.github.nishantshah0.papertrader.quote.Quote;
 import io.github.nishantshah0.papertrader.quote.QuoteCache;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Locale;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+// The entry point for orders. Anything that can fill or change the book goes through
+// the MatchingEngine, which runs it on the symbol's matcher thread; reads go straight
+// to the database.
+//
+// The routed methods are deliberately not transactional: the request thread only waits
+// for the matcher, and holding a database connection while it waits could starve the
+// matcher threads of connections.
 @Service
 public class OrderService {
 
     private final AccountRepository accounts;
     private final OrderRepository orders;
     private final TradeRepository trades;
-    private final PositionRepository positions;
     private final QuoteCache quotes;
-    private final ApplicationEventPublisher events;
+    private final MatchingEngine engine;
 
-    OrderService(AccountRepository accounts, OrderRepository orders, TradeRepository trades,
-            PositionRepository positions, QuoteCache quotes, ApplicationEventPublisher events) {
+    OrderService(AccountRepository accounts, OrderRepository orders, TradeRepository trades, QuoteCache quotes,
+            MatchingEngine engine) {
         this.accounts = accounts;
         this.orders = orders;
         this.trades = trades;
-        this.positions = positions;
         this.quotes = quotes;
-        this.events = events;
+        this.engine = engine;
     }
 
-    // one transaction per order: the account row lock serialises orders on the same
-    // account, and the cash, position, order and trade changes commit or roll back together
-    @Transactional
     public Order place(Long accountId, PlaceOrderRequest request) {
         return place(accountId, request, null);
     }
 
-    @Transactional
     public Order place(Long accountId, PlaceOrderRequest request, String key) {
-        Account account = accounts.findByIdForUpdate(accountId)
-                .orElseThrow(() -> new NotFoundException("account " + accountId + " not found"));
-        if (key != null) {
-            if (key.isBlank() || key.length() > 128) {
-                throw new OrderRejectedException("Idempotency-Key must contain 1 to 128 characters");
-            }
-            var previous = orders.findByAccountIdAndIdempotencyKey(accountId, key);
-            if (previous.isPresent()) {
-                if (!previous.get().sameRequest(request)) {
-                    throw new OrderStateException("Idempotency-Key was already used for a different order");
-                }
-                return previous.get();
-            }
-        }
+        requireAccount(accountId);
         String symbol = request.symbol().toUpperCase(Locale.ROOT);
-        Quote quote = quotes.get(symbol)
-                .orElseThrow(() -> new OrderRejectedException("unknown symbol " + symbol));
-        if ((request.typeOrMarket() == OrderType.LIMIT) != (request.limitPrice() != null)) {
-            throw new OrderRejectedException("limit orders require limitPrice; market orders must omit it");
+        if (quotes.get(symbol).isEmpty()) {
+            throw new OrderRejectedException("unknown symbol " + symbol); // before it gets a matcher thread
         }
-        Order order = request.typeOrMarket() == OrderType.LIMIT
-                ? Order.limit(accountId, symbol, request.side(), request.quantity(), request.limitPrice())
-                : Order.market(accountId, symbol, request.side(), request.quantity());
-        Reservations reserved = Reservations.of(
-                orders.findByAccountIdAndStatusOrderByCreatedAtDesc(accountId, OrderStatus.OPEN));
-        checkAvailable(account, order, order.getType() == OrderType.LIMIT ? order.getLimitPrice() : quote.price(),
-                reserved);
-        order.setIdempotencyKey(key);
-        orders.save(order);
-        // only an order that executes now needs a fresh price. a limit that does not
-        // cross can rest on a stale quote, e.g. outside market hours; match() refuses
-        // stale quotes again before it fills
-        if (order.crosses(quote.price())) {
-            quotes.requireTradable(quote);
-            fill(account, order, quote.price());
-        }
-        events.publishEvent(new OrderChanged(accountId, order.getId(), order.getStatus()));
-        return order;
+        return engine.place(accountId, request, key, symbol);
     }
 
-    // The engine passes IDs, never managed entities: take the account lock, then read the
-    // order, so a cancel or a second match of the same order cannot double-fill.
-    // REQUIRES_NEW because the engine also calls this from an after-commit listener,
-    // where joining the finished transaction would silently drop the writes.
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public OrderStatus match(Long accountId, Long orderId) {
-        Account account = accounts.findByIdForUpdate(accountId).orElseThrow();
-        Order order = find(accountId, orderId);
-        if (!order.isOpen()) {
-            return order.getStatus(); // cancelled or filled since it was queued
-        }
-        Quote quote = quotes.get(order.getSymbol()).orElse(null);
-        if (quote == null || !quotes.isTradable(quote) || !order.crosses(quote.price())) {
-            return order.getStatus();
-        }
-        try {
-            checkResources(account, order, quote.price());
-        } catch (OrderRejectedException e) {
-            order.reject();
-            events.publishEvent(new OrderChanged(accountId, orderId, order.getStatus()));
-            return order.getStatus();
-        }
-        fill(account, order, quote.price());
-        events.publishEvent(new OrderChanged(accountId, orderId, order.getStatus()));
-        return order.getStatus();
-    }
-
-    // A new order may only use what open limit orders have not already claimed, so a
-    // resting order stays funded until it fills or is cancelled. Buys reserve at their
-    // limit and fill at or below it, which means the hold always covers the fill.
-    private void checkAvailable(Account account, Order order, BigDecimal price, Reservations reserved) {
-        BigDecimal cost = price.multiply(BigDecimal.valueOf(order.getQuantity())).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal buyingPower = account.getCash().subtract(reserved.cash());
-        if (order.getSide() == OrderSide.BUY && buyingPower.compareTo(cost) < 0) {
-            throw new OrderRejectedException("insufficient cash: order needs " + cost + ", buying power is "
-                    + buyingPower.max(BigDecimal.ZERO) + " after open orders");
-        }
-        int held = positions.findByAccountIdAndSymbol(order.getAccountId(), order.getSymbol())
-                .map(Position::getQuantity).orElse(0);
-        int free = held - reserved.shares(order.getSymbol());
-        if (order.getSide() == OrderSide.SELL && free < order.getQuantity()) {
-            throw new OrderRejectedException("insufficient shares: order sells " + order.getQuantity() + " "
-                    + order.getSymbol() + ", " + Math.max(free, 0) + " not already on open orders");
-        }
-        checkResources(account, order, price);
-    }
-
-    // Execution re-checks the balance itself under the same account lock. With
-    // reservations this should always pass; it still guards orders placed before
-    // reservations existed, which become REJECTED without a trade if unfunded.
-    private void checkResources(Account account, Order order, BigDecimal price) {
-        BigDecimal cost = price.multiply(BigDecimal.valueOf(order.getQuantity())).setScale(2, RoundingMode.HALF_UP);
-        if (order.getSide() == OrderSide.BUY && !account.canAfford(cost)) {
-            throw new OrderRejectedException("insufficient cash");
-        }
-        int held = positions.findByAccountIdAndSymbol(order.getAccountId(), order.getSymbol())
-                .map(Position::getQuantity).orElse(0);
-        if (order.getSide() == OrderSide.SELL && held < order.getQuantity()) {
-            throw new OrderRejectedException("insufficient shares");
-        }
-        if (order.getSide() == OrderSide.BUY && (long) held + order.getQuantity() > Integer.MAX_VALUE) {
-            throw new OrderRejectedException("position quantity exceeds supported maximum");
-        }
-    }
-
-    private void fill(Account account, Order order, BigDecimal price) {
-        BigDecimal notional = price.multiply(BigDecimal.valueOf(order.getQuantity())).setScale(2, RoundingMode.HALF_UP);
-        Position position = positions.findByAccountIdAndSymbol(order.getAccountId(), order.getSymbol())
-                .orElseGet(() -> new Position(order.getAccountId(), order.getSymbol()));
-        switch (order.getSide()) {
-            case BUY -> {
-                if (!account.canAfford(notional)) {
-                    throw new OrderRejectedException("insufficient cash: order costs " + notional
-                            + ", account has " + account.getCash());
-                }
-                account.debit(notional);
-                position.buy(order.getQuantity(), price);
-            }
-            case SELL -> {
-                if (position.getQuantity() < order.getQuantity()) {
-                    throw new OrderRejectedException("insufficient shares: order sells " + order.getQuantity()
-                            + " " + order.getSymbol() + ", account holds " + position.getQuantity());
-                }
-                position.sell(order.getQuantity(), price);
-                account.credit(notional);
-            }
-        }
-        order.fill();
-        positions.save(position);
-        trades.save(new Trade(order, price));
-    }
-
-    @Transactional
     public Order cancel(Long accountId, Long orderId) {
-        accounts.findByIdForUpdate(accountId)
-                .orElseThrow(() -> new NotFoundException("account " + accountId + " not found"));
-        Order order = find(accountId, orderId);
-        if (!order.isOpen()) {
-            throw new OrderStateException("order " + orderId + " is " + order.getStatus()
-                    + ", only OPEN orders can be cancelled");
-        }
-        order.cancel();
-        events.publishEvent(new OrderChanged(accountId, orderId, order.getStatus()));
-        return order;
+        return engine.cancel(accountId, orderId, find(accountId, orderId).getSymbol());
+    }
+
+    // fills a resting order against the current house quote if it crosses; the quote
+    // feed does this for every order on each tick, tests call it directly
+    public OrderStatus match(Long accountId, Long orderId) {
+        return engine.match(orderId, find(accountId, orderId).getSymbol());
     }
 
     @Transactional(readOnly = true)

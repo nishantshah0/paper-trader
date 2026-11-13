@@ -39,6 +39,33 @@ function mergeHistory(previous, samples) {
   return next;
 }
 const percent = (value) => (value >= 0 ? "+" : "") + value.toFixed(2) + "%";
+// "filled", "open", or "3 of 10 filled" for an order that is still working
+const describe = (order) =>
+  order.status === "OPEN" && order.filledQuantity > 0
+    ? order.filledQuantity + " of " + order.quantity + " filled"
+    : order.status.toLowerCase();
+// users' price levels with the house merged in, best first, paired into rows
+function bookRows(book, depth = 5) {
+  if (!book) return [];
+  const side = (levels, housePrice, better) => {
+    const merged = levels.map((l) => ({ ...l, house: false }));
+    if (housePrice != null)
+      merged.push({ price: housePrice, quantity: "any", house: true });
+    return merged
+      .sort((a, b) =>
+        Number(a.price) === Number(b.price)
+          ? a.house - b.house
+          : better(Number(a.price), Number(b.price)),
+      )
+      .slice(0, depth);
+  };
+  const bids = side(book.bids, book.house?.bid, (a, b) => b - a),
+    asks = side(book.asks, book.house?.ask, (a, b) => a - b);
+  return Array.from({ length: Math.max(bids.length, asks.length) }, (_, i) => ({
+    bid: bids[i],
+    ask: asks[i],
+  }));
+}
 export default function App() {
   const [account, setAccount] = useState(initialAccount),
     [portfolio, setPortfolio] = useState(null);
@@ -66,6 +93,7 @@ export default function App() {
     [existing, setExisting] = useState(""),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [book, setBook] = useState(null);
   const [search, setSearch] = useState(""),
     [activeTab, setActiveTab] = useState("positions");
   const [timeframe, setTimeframe] = useState("ALL"),
@@ -127,6 +155,16 @@ export default function App() {
     const timer = setInterval(() => refresh().catch(() => {}), 15000);
     return () => clearInterval(timer);
   }, [refresh]);
+  const quoteStamp = quotes.find((q) => q.symbol === symbol)?.asOf;
+  useEffect(() => {
+    let current = true;
+    api("/book/" + symbol)
+      .then((b) => current && setBook(b))
+      .catch(() => current && setBook(null));
+    return () => {
+      current = false;
+    };
+  }, [symbol, quoteStamp, orders]);
   useEffect(() => {
     setPortfolio(null);
     setOrders([]);
@@ -150,13 +188,8 @@ export default function App() {
           client.subscribe("/topic/accounts/" + account, (m) => {
             // a resting order filled or was rejected by the engine, not by this tab
             const change = JSON.parse(m.body);
-            if (change.status !== "OPEN")
-              setNotice(
-                "Order #" +
-                  change.orderId +
-                  " · " +
-                  change.status.toLowerCase(),
-              );
+            if (change.status !== "OPEN" || change.filledQuantity > 0)
+              setNotice("Order #" + change.orderId + " · " + describe(change));
             refresh().catch(() => {});
           });
       },
@@ -236,7 +269,7 @@ export default function App() {
         body,
       });
       pending.current = null;
-      setNotice("Order #" + o.id + " · " + o.status.toLowerCase());
+      setNotice("Order #" + o.id + " · " + describe(o));
       setActiveTab(o.status === "OPEN" ? "orders" : "positions");
       await refresh();
     } catch (e) {
@@ -277,9 +310,14 @@ export default function App() {
         .toLowerCase()
         .includes(search.toLowerCase()),
     );
+  const housePrice = book?.house
+    ? side === "BUY"
+      ? book.house.ask
+      : book.house.bid
+    : selected?.price;
   const estimate =
     Number(quantity) *
-    (type === "LIMIT" ? Number(limit) : Number(selected?.price || 0));
+    (type === "LIMIT" ? Number(limit) : Number(housePrice || 0));
   // shares not already promised to an open sell limit
   const held =
     portfolio?.positions.find((p) => p.symbol === symbol)?.availableQuantity ||
@@ -708,7 +746,11 @@ export default function App() {
                                 {o.side}
                               </span>
                             </td>
-                            <td>{o.quantity}</td>
+                            <td>
+                              {o.filledQuantity
+                                ? o.filledQuantity + " / " + o.quantity
+                                : o.quantity}
+                            </td>
                             <td>{money(o.limitPrice)}</td>
                             <td>
                               <button
@@ -749,6 +791,7 @@ export default function App() {
                           <th>Side</th>
                           <th>Quantity</th>
                           <th>Fill price</th>
+                          <th>With</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -765,6 +808,9 @@ export default function App() {
                             </td>
                             <td>{t.quantity}</td>
                             <td>{money(t.price)}</td>
+                            <td>
+                              {t.counterparty === "USER" ? "Trader" : "House"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -792,7 +838,8 @@ export default function App() {
                           <th>Order</th>
                           <th>Symbol</th>
                           <th>Side</th>
-                          <th>Quantity</th>
+                          <th>Filled</th>
+                          <th>Avg price</th>
                           <th>Status</th>
                         </tr>
                       </thead>
@@ -802,7 +849,12 @@ export default function App() {
                             <td>#{o.id}</td>
                             <td>{o.symbol}</td>
                             <td>{o.side}</td>
-                            <td>{o.quantity}</td>
+                            <td>
+                              {o.filledQuantity} / {o.quantity}
+                            </td>
+                            <td>
+                              {o.avgFillPrice ? money(o.avgFillPrice) : "—"}
+                            </td>
                             <td>
                               <span
                                 className={
@@ -916,8 +968,8 @@ export default function App() {
                 </div>
                 <div className="order-summary">
                   <div>
-                    <span>Market price</span>
-                    <b>{selected ? money(selected.price) : "—"}</b>
+                    <span>{side === "BUY" ? "House ask" : "House bid"}</span>
+                    <b>{housePrice ? money(housePrice) : "—"}</b>
                   </div>
                   <div>
                     <span>
@@ -947,10 +999,49 @@ export default function App() {
                 </button>
                 <p className="order-note">
                   {type === "LIMIT"
-                    ? "Executes when the quote crosses your limit. Cash and shares are checked at execution."
-                    : "Executes at the latest quote. Whole shares only. No commissions."}
+                    ? "Fills against other traders first, then the house. Unfilled shares rest until an order or quote crosses your limit."
+                    : "Fills at the best prices available: other traders inside the spread, then the house. Whole shares only."}
                 </p>
               </form>
+            </section>
+            <section className="book panel" aria-label={symbol + " order book"}>
+              <div className="panel-heading">
+                <h2>Order book</h2>
+                <span className="muted">{symbol}</span>
+              </div>
+              <table className="book-table">
+                <thead>
+                  <tr>
+                    <th>Bid size</th>
+                    <th>Bid</th>
+                    <th>Ask</th>
+                    <th>Ask size</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookRows(book).map((row, i) => (
+                    <tr key={i}>
+                      <td className={row.bid?.house ? "house" : ""}>
+                        {row.bid ? row.bid.quantity : ""}
+                      </td>
+                      <td className="positive">
+                        {row.bid ? money(row.bid.price) : ""}
+                      </td>
+                      <td className="negative">
+                        {row.ask ? money(row.ask.price) : ""}
+                      </td>
+                      <td className={row.ask?.house ? "house" : ""}>
+                        {row.ask ? row.ask.quantity : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="book-note">
+                {book?.house
+                  ? "The house fills any size at its price. Orders inside its spread trade with other users first."
+                  : "Quote is stale. Users can still trade with each other; the house is out."}
+              </p>
             </section>
             <section className="leaderboard panel">
               <div className="panel-heading">

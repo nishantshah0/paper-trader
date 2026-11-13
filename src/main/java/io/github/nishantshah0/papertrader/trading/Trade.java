@@ -42,17 +42,22 @@ public class Trade {
     @Column(name = "executed_at", nullable = false, updatable = false)
     private Instant executedAt;
 
+    // the other user's order, or null when the house took the other side
+    @Column(name = "counterparty_order_id", updatable = false)
+    private Long counterpartyOrderId;
+
     protected Trade() {
     }
 
-    public Trade(Order order, BigDecimal price) {
+    public Trade(Order order, int quantity, BigDecimal price, Long counterpartyOrderId) {
         this.orderId = order.getId();
         this.accountId = order.getAccountId();
         this.symbol = order.getSymbol();
         this.side = order.getSide();
-        this.quantity = order.getQuantity();
+        this.quantity = quantity;
         this.price = price.setScale(4, RoundingMode.HALF_UP);
         this.executedAt = Instant.now();
+        this.counterpartyOrderId = counterpartyOrderId;
     }
 
     public BigDecimal notional() {
@@ -89,5 +94,9 @@ public class Trade {
 
     public Instant getExecutedAt() {
         return executedAt;
+    }
+
+    public Long getCounterpartyOrderId() {
+        return counterpartyOrderId;
     }
 }

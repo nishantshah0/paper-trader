@@ -28,6 +28,10 @@ papertrader:
     mode: ${FEED_MODE:demo}
     api-key: ${FINNHUB_API_KEY:}
     interval-ms: ${FEED_INTERVAL_MS:15000}
+  house:
+    # the simulated market maker quotes this far either side of the feed price, in
+    # basis points across the whole spread; users can trade inside it with each other
+    spread-bps: ${HOUSE_SPREAD_BPS:10}
   starting-cash: 100000.00
   # Demo reference prices; live mode will not execute against these seeds
   seed-quotes:
