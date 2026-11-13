@@ -10,6 +10,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByStatusOrderByCreatedAtAscIdAsc(OrderStatus status);
 
+    List<Order> findBySymbolAndStatusOrderByCreatedAtAscIdAsc(String symbol, OrderStatus status);
+
     List<Order> findByAccountIdOrderByCreatedAtDesc(Long accountId);
 
     List<Order> findByAccountIdAndStatusOrderByCreatedAtDesc(Long accountId, OrderStatus status);

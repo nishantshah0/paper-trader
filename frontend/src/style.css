@@ -984,6 +984,36 @@ select {
   color: var(--subtle);
   padding: 11px 5px 0;
 }
+.book-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 9px var(--mono);
+}
+.book-table th {
+  font: 8px var(--mono);
+  letter-spacing: 0.6px;
+  color: var(--subtle);
+  text-transform: uppercase;
+  font-weight: 400;
+  padding: 9px 12px 6px;
+  text-align: right;
+}
+.book-table td {
+  padding: 5px 12px;
+  text-align: right;
+  color: #a2afc5;
+}
+.book-table td.house {
+  color: var(--subtle);
+  font-style: italic;
+}
+.book-note {
+  font-size: 8px;
+  line-height: 1.6;
+  color: var(--subtle);
+  padding: 8px 14px 12px;
+  border-top: 1px solid #20252e;
+}
 .leaderboard {
   flex: 1;
 }

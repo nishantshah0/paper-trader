@@ -6,16 +6,16 @@
 Demo generator or Finnhub quote API
                  |
              QuoteCache ---------> STOMP /topic/quotes
-                 |  quote event
+                 |  quote event (queued, never waits on a fill)
                  v
-          MatchingEngine: one OrderBook per symbol (in memory)
-                 |  crossed order IDs
+  REST ----> MatchingEngine: one thread + one OrderBook per symbol
+                 |  plan fills from the book, then one transaction
                  v
-  REST ----> OrderService
-                 |
-       account row lock + transaction
+     OrderExecution: lock every account involved, in ID order
                  |
      Postgres: orders, trades, cash, positions
+                 |
+          after commit: apply the changes to the book
                  |
           AFTER_COMMIT event ----> STOMP /topic/accounts/{id}
                                            |
@@ -24,42 +24,58 @@ Demo generator or Finnhub quote API
 
 QuoteCache keeps an immutable snapshot of at most 240 observed quotes per symbol. The REST history endpoint hydrates charts after a browser refresh. Older updates are ignored, equal-timestamp updates replace the last sample, and live-mode seed prices are excluded. This bounded memory buffer resets on server restart.
 
-The quote feed runs on Spring's scheduler, independently of browser connections. Every quote it publishes reaches the matching engine as an application event on the feed thread. Each crossed order is filled through its own transactional service call, so a failure for one account does not stop the rest.
+The quote feed runs on Spring's scheduler, independently of browser connections. Each quote it publishes is queued to that symbol's matcher thread and the feed moves on, so a slow fill for one symbol never delays quotes for the others.
+
+## Who trades with whom
+
+Two kinds of liquidity meet in each book:
+
+- **Other users.** Limit orders that do not fill straight away rest in the book and wait for a counterparty.
+- **The house**, a simulated market maker. It quotes a bid and an ask either side of the feed price (`papertrader.house.spread-bps`, 10 basis points across the spread by default) and takes any size at those prices, so a market order always fills and a single user can trade alone.
+
+An incoming order walks the opposite side of the book best price first, oldest first within a price, and trades at each resting order's limit. It stops at its own limit, and at the first level the house beats: the house takes any size, so paying a user more than the house asks would be a bad fill. At an equal price the user goes first. Whatever is left trades with the house if its price is within the limit; a limit order with shares still left rests, partly filled. A market order is refused while the quote is stale, because there is no house price to bound what it could cost.
+
+Every quote also moves the house. Resting bids at or above the new house ask, and asks at or below the new house bid, fill in full at the house price.
+
+Users can only meet inside the spread: an order priced through the house trades with the house first. With a zero spread every order trades with the house, which is how the integration tests keep their arithmetic exact.
+
+An order that would trade with the same account's resting order is refused, and the account is asked to cancel the resting order first. Partly filled orders stay OPEN with a filled quantity and an average fill price; cancelling one keeps what filled.
 
 ## The order book
 
-Resting limit orders live in memory, one `OrderBook` per symbol. Each side is a `TreeMap` from price to a FIFO queue: bids sorted highest first, asks lowest first. A quote at price P pops every bid at or above P and every ask at or below P, best price first and oldest first within a price, and stops at the first level that does not cross. That costs O(log n) per touched level instead of a scan of every open order. A hash map from order ID to entry makes cancels O(log n) as well.
+Each side of a book is a `TreeMap` from price to a level: bids sorted highest first, asks lowest first. A level is a `LinkedHashMap` from order ID to entry, which keeps arrival order, removes a cancelled order in O(1), and lets a partial fill replace an entry without losing its place in the queue. Matching touches only the levels it fills from, instead of scanning every open order.
 
-Why a sorted map and not a heap: a heap gives the best price cheaply but cancelling from the middle is O(n), and walking several crossed levels means repeated pops. The sorted map does both directly.
+Why a sorted map and not a heap: a heap gives the best price cheaply, but cancelling from the middle is O(n), and walking several levels means repeated pops. The sorted map does both directly.
 
-Each book has its own lock. The feed thread holds it only while popping crossed orders, never during the database fill, so placements and cancels for that symbol are never stuck behind a fill, and other symbols never wait at all.
+## One matcher per symbol
+
+Each symbol has a single-threaded executor that owns its book. Placements, cancels and quote-driven fills for that symbol all run on it, one at a time. Request threads hand their order over and wait for the result (up to 10 seconds, then 503), so within a symbol nothing can interleave: there is no lock on the book and no race between a fill and a cancel to reason about. Different symbols match in parallel on their own threads.
+
+The request thread holds no transaction while it waits. Only the matcher thread opens one, so waiting requests cannot use up the connection pool.
 
 ### Postgres stays the record
 
-The book is an index of which orders might fill; it never decides that one does. `OrderService.match` takes the account row lock, re-reads the order, and fills only if it is still OPEN and the current quote still crosses. That one rule settles the races:
+The book is an index of what might fill; it never decides that something did. A placement first plans its fills from the book without changing it, then runs one transaction that re-reads each resting order it plans to trade with and fills it only if the row is still OPEN with enough shares left. The transaction reports what it changed (shares taken from an order, an order removed, a new order resting), and the engine applies that to the book only after commit. A rollback, such as a rejection for insufficient cash, leaves the book exactly as it was.
 
-- **Feed vs cancel.** If a cancel commits after the order was popped, match sees CANCELLED and does nothing. If the cancel commits first, its after-commit event removes the order from the book.
-- **Placement vs quote.** An order joins the book only after its transaction commits, then is checked against the current quote straight away, so a quote that arrived in between is not missed.
-- **Failed fill.** If match throws, or the quote is too old to trade, the order goes back in the book for the next quote. A stale entry that slips back in after a cancel is harmless, because match re-checks status.
-- **Restart.** On startup the books are rebuilt from OPEN rows (backed by a partial index) and checked against the cached quotes.
+If a row ever disagrees with the book, the transaction throws, the engine reloads that symbol's book from its OPEN rows and retries once. The same reload builds every book on startup, followed by a sweep against the cached quotes.
 
-This is not built for exchange-scale throughput. A larger system would partition symbols across threads or nodes, use a durable event stream for quotes and order changes, and define fairness and reservation rules explicitly.
+This is not built for exchange-scale throughput. A larger system would partition symbols across processes, journal orders and quotes to a durable stream, and replay the book from it instead of from the orders table.
 
 ## Transactions and races
 
-Every placement, fill, and cancellation locks the account row first, then reads current order/position state. That shared lock order serializes competing operations on one account. Two workers seeing the same open order cannot both fill it: the second obtains the lock only after the first commits and then observes a terminal status.
+A trade between two users changes two accounts in one transaction: both cash balances, both positions, both orders and a trade row for each side. Every transaction locks the accounts it touches in ascending ID order. Two matcher threads can trade between the same pair of accounts at once, one on each symbol; because both take the locks in the same order, neither can hold the lock the other is waiting for. A test runs exactly that cross-symbol pattern repeatedly.
 
-Accounts also carry a `@Version` column. With the row lock in place it never conflicts; it exists so that any future write path that forgets the lock fails with an optimistic-lock error instead of silently overwriting a balance.
+Accounts also carry a `@Version` column. With the row locks in place it never conflicts; it exists so that any future write path that forgets the lock fails with an optimistic-lock error instead of silently overwriting a balance.
 
-Fills change cash, position, order status, and the trade row in one transaction. A unique trade/order index is a database backstop. Portfolio and leaderboard reads use repeatable-read transactions to avoid mixing balances and positions from different commits.
+Portfolio and leaderboard reads use repeatable-read transactions to avoid mixing balances and positions from different commits. The database refuses to overfill an order: `filled_quantity` is checked against `quantity`, and a FILLED order must be fully filled.
 
-Open limit orders reserve buying power and inventory. The holds are not stored: placement reads the account's OPEN orders under the account row lock and subtracts their buy notionals (at the limit price) from cash and their sell quantities from shares. Because every placement takes the same lock, two orders cannot both claim the same cash. A buy reserves at its limit and fills at or below it, so its hold always covers the fill; the execution-time check remains for orders placed before reservations existed, which still become REJECTED if unfunded. Market-order failures roll back the new order entirely.
+Open limit orders reserve buying power and inventory for the shares they still have to fill. The holds are not stored: placement reads the account's OPEN orders under its lock and subtracts their remaining buy notionals (at the limit price) from cash and their remaining sell quantities from shares. A buy reserves at its limit and fills at or below it, so its hold always covers the fill. A market buy is checked against the house ask, the worst price it can fill at. Each fill still re-checks the balance under the lock; a resting order that cannot pay (only possible for orders placed before reservations existed) is rejected and skipped.
 
-Orders execute all-or-nothing at the current quote, even if its price improves on the limit. There are no partial fills or user-to-user matching. Notional values round half up to cents; prices and average cost use four decimals.
+Notional values round half up to cents per fill; prices and average costs use four decimals. Fills are whole-share and long-only.
 
 ## Safe retries
 
-The optional idempotency key is scoped to the account and limited to 128 characters. Under the account lock, placement looks up an existing key before checking current quotes or balances. Matching payloads return the existing order (including its latest status); changed payloads return 409. A partial unique index provides a second line of defense.
+The optional idempotency key is scoped to the account and limited to 128 characters. Placement looks up an existing key before planning fills or checking balances. Retries of the same order run on the same matcher thread one after another, so the second always sees the first. Matching payloads return the existing order (including its latest status); changed payloads return 409. A partial unique index provides a second line of defense.
 
 The browser retains a failed request's key until that payload changes or succeeds. Account switching clears pending retries. This prevents a network timeout followed by a retry from creating two fills.
 
@@ -67,13 +83,13 @@ The browser retains a failed request's key until that payload changes or succeed
 
 - Demo: deterministic bounded price oscillations around configured seed prices, every 15 seconds. Clearly labeled simulated prices.
 - Static: unchanged configured prices, used by integration tests.
-- Finnhub: server-side HTTP requests with five-second connection/read timeouts. Seeds have an epoch timestamp and are never executable. Invalid, future-dated, or out-of-order quotes cannot replace good data. Quotes older than 120 seconds cannot execute. A limit order that does not cross can still be placed against a stale quote: it rests and fills on the first fresh quote that crosses it.
+- Finnhub: server-side HTTP requests with five-second connection/read timeouts. Seeds have an epoch timestamp and are never executable. Invalid, future-dated, or out-of-order quotes cannot replace good data. While a quote is older than 120 seconds the house is out: market orders are refused, and limit orders rest until a fresh quote crosses them. Users can still trade with each other.
 
 Provider failures log only the symbol and exception class, retaining the last good data. The browser displays quote timestamps. Credentials are environment configuration and are never sent to the browser. Actual Finnhub account access is not exercised by CI.
 
 ## Real-time delivery
 
-Only committed order changes are published. Clients subscribe to the same-origin STOMP endpoint; inbound client SEND frames are ignored because this channel is receive-only. Account events carry account ID, order ID, and status, prompting a REST refresh. Quote events carry symbol, price, and timestamp.
+Only committed order changes are published. Clients subscribe to the same-origin STOMP endpoint; inbound client SEND frames are ignored because this channel is receive-only. Account events carry account ID, order ID, status and filled quantity, prompting a REST refresh; both sides of a user-to-user trade get one. Quote events carry symbol, price, and timestamp.
 
 The simple broker has no durable replay. Reconnecting clients reload current REST state, and periodic refresh repairs missed messages. One app instance is the supported deployment; multiple instances would need shared quote and messaging infrastructure.
 
@@ -83,7 +99,7 @@ There is deliberately no identity/authentication layer. Account IDs select share
 
 ## Checks
 
-JUnit/Testcontainers exercises real Postgres migrations and transactional behavior, including concurrent orders and idempotent retries. A scheduled integration test changes a quote and waits for the matcher to fill without another order request. Playwright runs against the packaged app, including two independently subscribed browser tabs, cancellation, server validation, and mobile overflow checks.
+JUnit/Testcontainers exercises real Postgres migrations and transactional behavior, including concurrent orders, idempotent retries, user-to-user fills across several resting orders and the house, partial fills and cancels, self-trade refusal, and two matcher threads trading between the same accounts at once. The book and engine have unit tests for price-time priority, house priority and when book changes are applied. A scheduled integration test changes a quote and waits for the matcher to fill without another order request. Playwright runs against the packaged app, including two independently subscribed browser tabs, cancellation, server validation, and mobile overflow checks.
 
 ## Frontend navigation
 

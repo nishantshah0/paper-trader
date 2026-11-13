@@ -28,6 +28,7 @@ services:
       FEED_MODE: ${FEED_MODE:-demo}
       FINNHUB_API_KEY: ${FINNHUB_API_KEY:-}
       FEED_INTERVAL_MS: ${FEED_INTERVAL_MS:-15000}
+      HOUSE_SPREAD_BPS: ${HOUSE_SPREAD_BPS:-10}
     depends_on:
       postgres:
         condition: service_healthy

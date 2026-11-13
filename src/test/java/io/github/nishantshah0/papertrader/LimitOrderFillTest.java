@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
 
-@SpringBootTest(properties = {"papertrader.engine.enabled=true", "papertrader.feed.mode=static",
+@SpringBootTest(properties = {"papertrader.house.spread-bps=0", "papertrader.feed.mode=static",
         "papertrader.starting-cash=1000.00", "papertrader.seed-quotes.AAPL=100.00"})
 class LimitOrderFillTest extends ApiTestSupport {
 

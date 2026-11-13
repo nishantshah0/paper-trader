@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// What an account's open limit orders have already claimed: cash for buys at their
-// limit, shares for sells. Worked out from the OPEN rows rather than stored, so there
+// What an account's open limit orders have already claimed for the shares they still
+// have to fill: cash for buys at their limit, shares for sells. Worked out from the OPEN rows rather than stored, so there
 // is no second balance to keep in sync. Callers read the orders under the account
 // row lock, which is what keeps the sum current.
 public final class Reservations {
@@ -31,10 +31,10 @@ public final class Reservations {
             }
             if (order.getSide() == OrderSide.BUY) {
                 // rounded per order, the same way a fill prices it
-                cash = cash.add(order.getLimitPrice().multiply(BigDecimal.valueOf(order.getQuantity()))
+                cash = cash.add(order.getLimitPrice().multiply(BigDecimal.valueOf(order.remainingQuantity()))
                         .setScale(2, RoundingMode.HALF_UP));
             } else {
-                shares.merge(order.getSymbol(), order.getQuantity(), Integer::sum);
+                shares.merge(order.getSymbol(), order.remainingQuantity(), Integer::sum);
             }
         }
         return new Reservations(cash, shares);
